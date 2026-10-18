@@ -447,7 +447,7 @@ with S.frame("roadmap", "Roadmap & phases", 2160, 600,
 
 
 # ----------------------------------------------------------------------- 14
-with S.frame("pyflow", "Python AI service — page to verdict", 2320, 1980,
+with S.frame("pyflow", "Python AI service — page to verdict", 2320, 2980,
              "Step by step, with the file for each step. Dashed = later (content cache). LLMs get TEXT; vectors are only for lookup and comparison."):
     S.box("ext", 100, 190, 300, 90, "1. Extension reads page\ntitle · tags · text", "blue", size=16)
     S.box("go", 520, 190, 360, 90, "Go API\n→ POST /v1/classify (api.py)", "cyan", size=16)
@@ -461,7 +461,7 @@ with S.frame("pyflow", "Python AI service — page to verdict", 2320, 1980,
     S.box("s6", 500, 1120, 400, 100, "6. Embedder\nsummary TEXT → summary vector\ngoal TEXT → goal vector", "yellow", size=16)
     S.box("s7", 560, 1330, 280, 160, "7. Goal matcher\ncompare vectors\n→ score", "violet", shape="diamond", size=15)
     S.box("allow", 140, 1590, 240, 90, "ALLOW", "green", size=20)
-    S.box("judge", 540, 1580, 320, 110, "8. LLM judge\ngets summary TEXT\n+ goal TEXT", "yellow", size=16)
+    S.box("judge", 540, 1580, 320, 110, "8. LLM judge (unclear only)\nsummary TEXT + goal TEXT\ndetail below ↓", "yellow", size=16)
     S.box("block", 1020, 1590, 240, 90, "BLOCK", "red", size=20)
 
     S.box("prov", 1760, 1110, 280, 110, "LLM provider APIs\n(llm.py chain)", "gray", shape="ellipse", size=16)
@@ -476,9 +476,9 @@ with S.frame("pyflow", "Python AI service — page to verdict", 2320, 1980,
     S.arrow("s4a", "s6", "saved summary", style="dashed")
     S.arrow("s4b", "s6", "summary TEXT")
     S.arrow("s6", "s7", "two vectors")
-    S.arrow("s7", "allow", "high ≥ 0.75")
-    S.arrow("s7", "judge", "middle")
-    S.arrow("s7", "block", "low ≤ 0.55")
+    S.arrow("s7", "allow", "related ≥ 0.75")
+    S.arrow("s7", "judge", "unclear 0.55–0.75")
+    S.arrow("s7", "block", "unrelated ≤ 0.55")
     S.arrow("judge", "allow", "on-task")
     S.arrow("judge", "block", "distraction")
     S.arrow("s4b", "prov", "TEXT", style="dashed")
@@ -500,6 +500,44 @@ with S.frame("pyflow", "Python AI service — page to verdict", 2320, 1980,
     S.note("now", 1720, 730, 560, 230,
            "Building now (Step 0)\n1 → 4b → 6 → 7 → 8\n\nLater (content cache)\n2 → 3 → 4a, and 5\n\nFAISS remembers what a page IS,\nnever whether it distracts.", "gray", size=17)
     S.text(100, 1920, "Verdict (allow / block + reason) returns to the Go API, then the extension shows the block overlay.", 17, color=MUTED)
+
+    # Step 8 in detail: what happens when the score is unclear.
+    Y0 = 2040
+    S.zone("detail", 80, Y0, 2160, 880, "Step 8 in detail — unclear score (0.55–0.75)", "yellow")
+    S.box("u_in", 120, Y0 + 95, 240, 90, "From step 8\nscore 0.55–0.75", "violet", shape="ellipse", size=15)
+    S.box("u_prompt", 450, Y0 + 75, 380, 130,
+          "8.1 Build prompt (judge.py)\nsystem: judge rules\nuser: goal · profile · summary\ntopics · kind · score", "yellow", size=15)
+    S.box("u_try", 950, Y0 + 85, 300, 110, "8.2 complete_json (llm.py)\ntry provider 1 (Groq)", "yellow", size=15)
+    S.box("u_ok", 1370, Y0 + 65, 280, 150, "Valid JSON\n{decision,\nreason}?", "blue", shape="diamond", size=15)
+    S.box("u_more", 1840, Y0 + 65, 280, 150, "More providers\nleft?", "blue", shape="diamond", size=15)
+    S.box("u_verdict", 1360, Y0 + 320, 300, 110, "8.3 Verdict (judge.py)\ndecision · reason\nsource = llm", "yellow", size=15)
+    S.box("u_exh", 1840, Y0 + 330, 280, 90, "AllProvidersExhausted\n(llm.py)", "red", size=15)
+    S.box("u_yt", 1840, Y0 + 500, 280, 150, "YouTube page?\n(later)", "blue", shape="diamond", style="dashed", size=15)
+    S.box("u_allow", 1360, Y0 + 530, 300, 90, "Allow · recheck when\nAI is back (later)", "green", style="dashed", size=15)
+    S.box("u_tags", 1840, Y0 + 730, 280, 100, "Tag / channel parser\ndistracting tags → block\n(later)", "gray", style="dashed", size=15)
+    S.box("u_out", 900, Y0 + 520, 380, 120, "Return Verdict → Go API\nallow / block + reason\n(Go counts 1 AI check)", "cyan", size=15)
+    S.note("u_notes", 120, Y0 + 520, 700, 290,
+           "Notes\n"
+           "• The same chain + fallback also guards the describer (4b).\n"
+           "• Go checks its cached verdict before calling Python,\n"
+           "  so there is no cache step here.\n"
+           "• Bad JSON counts as a provider failure → next provider.\n"
+           "• Spec gap: Verdict.source needs a \"fallback\" value\n"
+           "  for the tag-parser and allow-and-recheck paths.", "gray", size=15)
+
+    S.arrow("u_in", "u_prompt", "")
+    S.arrow("u_prompt", "u_try", "TEXT")
+    S.arrow("u_try", "u_ok", "")
+    S.arrow("u_ok", "u_verdict", "yes")
+    S.arrow("u_ok", "u_more", "no: rate limit ·\ntimeout · bad JSON")
+    S.arrow("u_more", "u_try", "yes: next provider (Gemini …)", via=[(1980, Y0 + 40), (1100, Y0 + 40)])
+    S.arrow("u_more", "u_exh", "no")
+    S.arrow("u_exh", "u_yt", "")
+    S.arrow("u_yt", "u_tags", "yes", style="dashed")
+    S.arrow("u_yt", "u_allow", "no", style="dashed")
+    S.arrow("u_verdict", "u_out", "")
+    S.arrow("u_allow", "u_out", "", style="dashed")
+    S.arrow("u_tags", "u_out", "", style="dashed", via=[(1090, Y0 + 780)])
 
 
 S.save(OUT)
