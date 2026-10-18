@@ -1,0 +1,16 @@
+# LLM provider chain, tried in order (spec §5.6).
+# When one provider hits its quota or rate limit, the next one is used.
+# All of these speak the OpenAI-compatible chat API, so one client works for every provider.
+# Model names change often: check each provider's current model list.
+
+[[provider]]
+name = "groq"
+base_url = "https://api.groq.com/openai/v1"
+model = "llama-3.1-8b-instant"
+api_key_env = "GROQ_API_KEY"
+
+[[provider]]
+name = "gemini"
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
+model = "gemini-2.5-flash"
+api_key_env = "GEMINI_API_KEY"
