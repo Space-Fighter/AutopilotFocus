@@ -8,19 +8,31 @@ from .embedder import Embedder, cosine
 from .schemas import ContentFacts, Goal, MatchResult
 
 
-# YOU TYPE #2
 def facts_text(facts: ContentFacts) -> str:
     """Flatten ContentFacts into one string to embed."""
-    raise NotImplementedError("YOU TYPE #2")
+    # `kind` is left out: only six values shared by every page, so it adds noise, not meaning.
+    return f"{facts.summary}. Topics: {', '.join(facts.topics)}"
 
 
-# YOU TYPE #2
 def goal_text(goal: Goal) -> str:
     """Flatten the goal (and profile) into one string to embed."""
-    raise NotImplementedError("YOU TYPE #2")
+    # The profile may pull all "student" content closer. If the eval shows that, drop it here
+    # and let the LLM judge use the profile instead.
+    if goal.profile:
+        return f"{goal.text} (as a {goal.profile})"
+    return goal.text
 
 
-# YOU TYPE #2
 def match(facts: ContentFacts, goal: Goal, embedder: Embedder, settings: Settings) -> MatchResult:
     """Score facts against the goal and put the score in a band: related / unrelated / unclear."""
-    raise NotImplementedError("YOU TYPE #2")
+    # Step 0 shortcut: the goal is re-embedded every call. Later, cache its vector per session.
+    similarity = cosine(embedder.embed(facts_text(facts)), embedder.embed(goal_text(goal)))
+
+    if similarity >= settings.related_threshold:
+        band = "related"
+    elif similarity <= settings.unrelated_threshold:
+        band = "unrelated"
+    else:
+        band = "unclear"  # only this band costs an LLM judge call
+
+    return MatchResult(similarity=similarity, band=band)
