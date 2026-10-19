@@ -18,6 +18,7 @@ from .schemas import Goal, PageData, Verdict
 class ClassifyRequest(BaseModel):
     page: PageData
     goal: Goal
+    use_llm: bool = True  # False = basic mode (Go sends it when the free daily cap is used up)
 
 
 @asynccontextmanager
@@ -41,4 +42,4 @@ def health() -> dict:
 @app.post("/v1/classify")
 def classify_endpoint(req: ClassifyRequest) -> Verdict:
     s = app.state
-    return classify(req.page, req.goal, s.llm, s.embedder, s.settings)
+    return classify(req.page, req.goal, s.llm, s.embedder, s.settings, use_llm=req.use_llm)

@@ -144,16 +144,39 @@ Extension: allow, or show the block screen (§7)
 ### 5.6 Model chain (Decided)
 - No "smarter model" tier. Same-tier models run **in sequence**: when one provider's quota or rate limit runs out, move to the next.
 - **Free-tier APIs first** (for example Gemini Flash, Groq-hosted open models) to keep v1 cost near zero. *(Proposed: the exact list and order go in config, not code.)*
-- **Last resort:** when every provider is exhausted, or the user's free cap is used up, offer premium, or a manual blocklist until limits reset.
+- **Last resort:** when every provider is exhausted, or the user's free cap is used up, switch to **basic mode** (§5.9). Blocking keeps working; free users also see the premium offer. *(Decided 2026-10-19; replaces "premium offer or manual blocklist".)*
 
 ### 5.7 AI outage or no verdict (Decided)
 1. Use a cached verdict if one exists.
-2. Otherwise use HTML and metadata tools. On YouTube, a **dedicated parser** checks tags, channel, and category against a predefined set of distracting tags. This matters because YouTube is heavily used for both study and distraction.
-3. Otherwise allow the page and re-check when the AI is back. *(Proposed final step.)*
+2. Otherwise use **basic mode** (§5.9). On YouTube its extracted summary includes tags, channel, and category, because YouTube is heavily used for both study and distraction. *(Decided 2026-10-19: the earlier predefined distracting-tags parser becomes an optional extra rule, added only if the eval shows basic mode misses YouTube distractions.)*
+3. Otherwise allow the page and re-check when the AI is back.
 4. A custom ML model is future scope.
 
 ### 5.8 Embedding model
 **Proposed (choice delegated to Claude):** a small local open model such as `bge-small-en-v1.5`, running on CPU in the Python service. It's free, fast, private, and has no per-call cost. Swap it later if accuracy demands.
+
+
+### 5.9 Basic mode: judging without an LLM (Decided 2026-10-19)
+Keeps blocking working, at near-zero cost, whenever an LLM can't be used.
+
+**When it runs**
+- **Free users** whose daily AI-check cap is used up, until the daily reset. The premium offer is shown, but protection never stops.
+- **Everyone** when every LLM provider is down or out of quota.
+- Premium users (unlimited AI checks) only reach it during outages.
+- The Go API decides: it calls the AI service with `use_llm: false`.
+
+**How a page is judged**
+1. **Extracted summary** instead of the LLM description: title + meta description + top headings, plus channel, category, and tags on YouTube. No LLM call.
+2. **Embedding match** of that summary against the goal, as in normal mode: related → allow, unrelated → block, unclear → step 3.
+3. **Closest past case:** search the **user's own** past verdicts for one with a similar page **and** a similar goal (both above a high threshold, about 0.9) and copy its decision. LLM-judged and user-corrected cases are preferred. Other users' verdicts are never used (they carry other goals and are private). *Needs stored verdict vectors; until that store exists, this step is skipped.*
+4. **No close case** → allow and re-check later.
+
+**Rules**
+- Basic mode may use its own similarity thresholds if the eval shows extracted text scores differently.
+- Verdicts record which path decided: `source` = `extracted` or `nearest`.
+- Whether the extracted summary should become the *first* step for everyone (LLM only when unclear) is **open**, decided by the eval.
+
+**Upgrade levers** *(Proposed)*: the popup shows "Basic mode: less accurate until midnight" and how many pages it wasn't sure about; the upgrade prompt appears when basic mode allows an unclear page; the free cap is tuned so light users rarely hit it and heavy users hit it daily. Track retention, upgrade rate, and appeal rate of basic mode versus normal mode.
 
 ---
 
@@ -225,8 +248,9 @@ Everything else on the page: URL, title, metadata, visible text, captions.
 ## 9. Accounts and pricing
 
 - **Sign-in required from the start** (Decided). Google and email + password. Gymodoro account later.
-- **Free tier (Decided):** a daily cap on *fresh* AI checks (cache hits don't count; appeals do), reset daily. *(Number to decide before launch; Proposed starting point: about 100 per day.)*
-- **Premium:** unlimited AI checks and Convince Me. *(Pricing to be decided.)*
+- **Free tier (Decided):** a daily cap on *fresh* AI checks (cache hits don't count; appeals do), reset daily. *(Number to decide before launch; Proposed starting point: about 100 per day.)* When the cap is used up, checks continue in **basic mode** (§5.9) until the reset.
+- **Premium:** unlimited AI checks (never capped into basic mode) and Convince Me. *(Pricing to be decided.)*
+- **Tiering rule (Decided 2026-10-19):** gate what costs money or adds "power"; never gate what makes the free product feel broken.
 
 ---
 

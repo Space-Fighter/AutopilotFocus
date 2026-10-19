@@ -59,5 +59,6 @@ class MatchResult(BaseModel):
 class Verdict(BaseModel):
     decision: Literal["allow", "block"]
     reason: str
-    source: Literal["embedding", "llm"]  # which step made the call
-    similarity: float
+    # Which step made the call. extracted / nearest = basic mode (spec §5.9), no LLM.
+    source: Literal["embedding", "llm", "extracted", "nearest", "fallback"]
+    similarity: float | None = None  # None when no goal match ran (e.g. fallback)

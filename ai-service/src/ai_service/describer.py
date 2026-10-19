@@ -49,6 +49,19 @@ def build_describe_prompt(page: PageData) -> str:
     return "\n".join(lines)
 
 
+def extracted_facts(page: PageData) -> ContentFacts:
+    """Basic mode (spec §5.9): build ContentFacts from the page's own fields, with no LLM call."""
+    parts = [page.title, page.meta_description, *page.headings[:3]]
+    topics: list[str] = []
+    if page.youtube:
+        parts += [page.youtube.channel, page.youtube.category]
+        topics = [t.lower() for t in page.youtube.tags[:4]]
+    cleaned = [p.strip().rstrip(".") for p in parts if p and p.strip()]
+    summary = ". ".join(c for c in cleaned if c)
+    # Without an LLM we can't tell the kind; "other" is never used by the matcher anyway.
+    return ContentFacts(summary=summary or page.url, topics=topics, kind="other")
+
+
 def describe_content(page: PageData, llm: ProviderChain) -> ContentFacts:
     """Call the LLM and validate its JSON into ContentFacts."""
     data = llm.complete_json(DESCRIBE_SYSTEM_PROMPT, build_describe_prompt(page))

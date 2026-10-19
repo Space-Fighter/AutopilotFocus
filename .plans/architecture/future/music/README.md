@@ -14,11 +14,20 @@ spec and code were reverted to the version without music.
   more songs doesn't restart it). When time is up, an overlay ("Music's on — back to work") covers
   the page while audio keeps playing.
 
+## Tier (Decided 2026-10-19)
+
+| Free | Premium |
+|---|---|
+| Music allowed (Spotify, YouTube Music, YouTube music videos); music pages stay open | The **music picking window** (timer, then overlay while audio keeps playing), with an adjustable length (e.g. 30 s / 45 s / 2 min) |
+
+Why: blocking music would make the free product feel broken, while the picking window is a
+"focus strength" feature. Rule: gate what costs money or adds power, never what makes free feel broken.
+
 ## Files here
 
 | File | What it is |
 |---|---|
-| `autopilot-focus-music.excalidraw` | The board with the music changes (frames 2, 5, 14) |
+| `autopilot-focus-music.excalidraw` | The board with the music changes (frames 2, 5, 14), kept in sync with the live board (includes basic mode, frame 15) |
 | `diagrams.py` | Source for that board. Run `python diagrams.py` from this folder to regenerate it |
 | `previews/` | PNGs of the three changed frames |
 | `spec-music.patch` | Spec text (§5.1 exception + §6 "Music picking window") |

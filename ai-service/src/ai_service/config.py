@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     # anything between is "unclear" and goes to the LLM judge.
     related_threshold: float = 0.75
     unrelated_threshold: float = 0.55
+    # Basic mode (spec §5.9) matches an extracted summary, which may score differently.
+    # Same values for now; the eval decides whether they need to move.
+    basic_related_threshold: float = 0.75
+    basic_unrelated_threshold: float = 0.55
     llm_timeout_s: float = 20.0
     providers_file: Path = SERVICE_ROOT / "providers.toml"
 

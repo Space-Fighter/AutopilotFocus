@@ -209,7 +209,7 @@ with S.frame("pipe", "AI agent — verdict pipeline", 2060, 1640,
     S.box("d3", M, 600, 260, 130, "Personal verdict\ncached?", "blue", shape="diamond", size=15)
     S.box("r1", 80, 630, 240, 70, "Apply cached verdict", "green", size=16)
     S.box("d4", M, 780, 260, 130, "Free cap\nleft?", "blue", shape="diamond", size=16)
-    S.box("up", 60, 810, 280, 70, "Premium offer /\nmanual blocklist", "yellow", size=16)
+    S.box("up", 60, 810, 280, 70, "Basic mode (frame 15)\n+ premium offer", "yellow", size=16)
     S.box("d5", M, 960, 260, 130, "Content facts\ncached?", "blue", shape="diamond", size=15)
     S.box("gen", M + 380, 990, 280, 70, "LLM writes content\ndescription → shared", "yellow", size=16)
     S.box("d6", M, 1140, 260, 130, "Embedding match\nvs goal", "violet", shape="diamond", size=15)
@@ -218,8 +218,8 @@ with S.frame("pipe", "AI agent — verdict pipeline", 2060, 1640,
     S.box("bl", M + 380, 1320, 300, 90, "BLOCK\n\"Caught you slopping\"", "red", size=18)
     S.box("ap", M + 760, 1200, 320, 80, "Appeal: one-line reason\n(free: uses 1 check)", "gray", size=16)
     S.box("cm", M + 760, 1440, 320, 80, "Dot challenge (free)\nConvince Me (premium)", "gray", size=16)
-    S.box("d7", M + 760, 960, 260, 130, "All providers\ndown → YouTube?", "red", shape="diamond", size=15)
-    S.box("tag", M + 380, 1150, 260, 70, "Tag / channel parser\n→ distracting tags", "gray", size=15)
+    S.box("d7", M + 760, 960, 260, 130, "All providers\ndown?", "red", shape="diamond", size=15)
+    S.box("tag", M + 380, 1150, 260, 70, "Basic mode (frame 15)\nno LLM", "yellow", size=15)
     S.box("allow2", M + 1100, 990, 260, 70, "Allow · recheck later", "green", size=16)
 
     for a, b, l in [("n0", "d1", ""), ("d1", "x1", "no"), ("d1", "d2", "yes"), ("d2", "a1", "yes"),
@@ -231,7 +231,6 @@ with S.frame("pipe", "AI agent — verdict pipeline", 2060, 1640,
                     ("d7", "tag", "yes"), ("d7", "allow2", "no")]:
         S.arrow(a, b, l)
     S.arrow("gen", "d7", "error", style="dashed", color="red")
-    S.arrow("tag", "d6", "", style="dashed")
 
 
 # ------------------------------------------------------------------------ 6
@@ -352,7 +351,7 @@ with S.frame("goal", "Goal & intent capture", 1960, 900,
 
 
 # ----------------------------------------------------------------------- 10
-with S.frame("db", "Database schema (Postgres)", 1460, 1200,
+with S.frame("db", "Database schema (Postgres)", 1460, 1280,
              "Raw history 30 days; aggregates forever; content facts shared by all users."):
     S.table("users", 60, 180, "users", ["id           uuid  PK", "email        text  UQ", "auth_provider text",
                                          "plan         text", "profile      jsonb", "focus_hours  jsonb",
@@ -365,13 +364,14 @@ with S.frame("db", "Database schema (Postgres)", 1460, 1200,
                                            "goal       text", "started_at ts", "ended_at   ts"])
     S.table("verd", 500, 580, "verdicts", ["id         uuid PK", "user_id    uuid FK", "session_id uuid FK",
                                            "content_id uuid FK", "verdict    text", "reason     text",
-                                           "source     text", "created_at ts"])
-    S.table("appl", 500, 980, "appeals", ["id         uuid PK", "verdict_id uuid FK", "kind  text  won bool"])
+                                           "source     text", "page_vec   vector (later)",
+                                           "goal_vec   vector (later)", "created_at ts"])
+    S.table("appl", 500, 1060, "appeals", ["id         uuid PK", "verdict_id uuid FK", "kind  text  won bool"])
     S.table("facts", 940, 620, "content_facts", ["id          uuid PK", "content_key text UQ",
                                                  "description text", "embedding   bytea",
                                                  "created_at  ts"], color="yellow")
-    S.note("ret", 940, 180, 460, 230,
-           "Retention\n• verdicts, appeals: deleted after 30 days\n• daily_stats: kept forever\n"
+    S.note("ret", 940, 180, 460, 260,
+           "Retention\n• verdicts, appeals: deleted after 30 days\n  (so basic mode remembers 30 days)\n• daily_stats: kept forever\n"
            "• content_facts: shared, not per user\n• FAISS index is rebuilt from\n  content_facts.embedding", "yellow", size=16)
     S.arrow("sess", "users", "user_id")
     S.arrow("verd", "users", "user_id")
@@ -496,6 +496,7 @@ with S.frame("pyflow", "Python AI service — page to verdict", 2320, 2980,
            "7  matcher.py #2\n"
            "8  judge.py #5 + llm.py #3\n"
            "glue 4b→8: pipeline.py #6\n"
+           "basic mode: describer.py + pipeline.py\n"
            "HTTP in/out: api.py (done)", "yellow", size=17)
     S.note("now", 1720, 730, 560, 230,
            "Building now (Step 0)\n1 → 4b → 6 → 7 → 8\n\nLater (content cache)\n2 → 3 → 4a, and 5\n\nFAISS remembers what a page IS,\nnever whether it distracts.", "gray", size=17)
@@ -512,9 +513,7 @@ with S.frame("pyflow", "Python AI service — page to verdict", 2320, 2980,
     S.box("u_more", 1840, Y0 + 65, 280, 150, "More providers\nleft?", "blue", shape="diamond", size=15)
     S.box("u_verdict", 1360, Y0 + 320, 300, 110, "8.3 Verdict (judge.py)\ndecision · reason\nsource = llm", "yellow", size=15)
     S.box("u_exh", 1840, Y0 + 330, 280, 90, "AllProvidersExhausted\n(llm.py)", "red", size=15)
-    S.box("u_yt", 1840, Y0 + 500, 280, 150, "YouTube page?\n(later)", "blue", shape="diamond", style="dashed", size=15)
-    S.box("u_allow", 1360, Y0 + 530, 300, 90, "Allow · recheck when\nAI is back (later)", "green", style="dashed", size=15)
-    S.box("u_tags", 1840, Y0 + 730, 280, 100, "Tag / channel parser\ndistracting tags → block\n(later)", "gray", style="dashed", size=15)
+    S.box("u_yt", 1800, Y0 + 520, 320, 110, "Basic mode → frame 15\nextracted summary · match\n(describer.py · pipeline.py)", "yellow", size=15)
     S.box("u_out", 900, Y0 + 520, 380, 120, "Return Verdict → Go API\nallow / block + reason\n(Go counts 1 AI check)", "cyan", size=15)
     S.note("u_notes", 120, Y0 + 520, 700, 290,
            "Notes\n"
@@ -522,8 +521,8 @@ with S.frame("pyflow", "Python AI service — page to verdict", 2320, 2980,
            "• Go checks its cached verdict before calling Python,\n"
            "  so there is no cache step here.\n"
            "• Bad JSON counts as a provider failure → next provider.\n"
-           "• Spec gap: Verdict.source needs a \"fallback\" value\n"
-           "  for the tag-parser and allow-and-recheck paths.", "gray", size=15)
+           "• Free cap used up: Go sends use_llm = false,\n"
+           "  so Python goes straight to basic mode.", "gray", size=15)
 
     S.arrow("u_in", "u_prompt", "")
     S.arrow("u_prompt", "u_try", "TEXT")
@@ -533,11 +532,42 @@ with S.frame("pyflow", "Python AI service — page to verdict", 2320, 2980,
     S.arrow("u_more", "u_try", "yes: next provider (Gemini …)", via=[(1980, Y0 + 40), (1100, Y0 + 40)])
     S.arrow("u_more", "u_exh", "no")
     S.arrow("u_exh", "u_yt", "")
-    S.arrow("u_yt", "u_tags", "yes", style="dashed")
-    S.arrow("u_yt", "u_allow", "no", style="dashed")
+    S.arrow("u_yt", "u_out", "")
     S.arrow("u_verdict", "u_out", "")
-    S.arrow("u_allow", "u_out", "", style="dashed")
-    S.arrow("u_tags", "u_out", "", style="dashed", via=[(1090, Y0 + 780)])
+
+
+# ----------------------------------------------------------------------- 15
+with S.frame("basic", "Basic mode — judging without an LLM", 2200, 1300,
+             "Runs when a free user's daily AI cap is used up, or when every LLM provider is down. Cost ≈ 0: local embeddings only."):
+    S.box("in1", 80, 200, 300, 90, "Free cap used up\n(Go sends use_llm = false)", "cyan", shape="ellipse", size=15)
+    S.box("in2", 80, 420, 300, 90, "All LLM providers\ndown", "red", shape="ellipse", size=15)
+    S.box("ex", 520, 300, 380, 120, "1. Extracted summary (describer.py)\ntitle · meta · headings\nYT channel · category · tags", "yellow", size=15)
+    S.box("m", 560, 540, 300, 160, "2. Embedding match\nvs goal\n(basic thresholds)", "violet", shape="diamond", size=15)
+    S.box("ok", 80, 580, 240, 80, "ALLOW", "green", size=18)
+    S.box("bl", 1060, 580, 240, 80, "BLOCK", "red", size=18)
+    S.box("nn", 560, 820, 300, 170, "3. Closest past case?\nsame user · similar page\n+ similar goal ≥ 0.9\n(later)", "blue", shape="diamond", style="dashed", size=14)
+    S.box("copy", 1060, 860, 280, 90, "Copy its verdict\nsource = nearest\n(later)", "gray", style="dashed", size=15)
+    S.box("re", 80, 870, 280, 90, "4. Allow ·\nrecheck later", "green", size=16)
+
+    S.arrow("in1", "ex", "")
+    S.arrow("in2", "ex", "")
+    S.arrow("ex", "m", "summary TEXT")
+    S.arrow("m", "ok", "related")
+    S.arrow("m", "bl", "unrelated")
+    S.arrow("m", "nn", "unclear")
+    S.arrow("nn", "copy", "yes", style="dashed")
+    S.arrow("nn", "re", "no (or not built yet)")
+
+    S.note("why", 1460, 180, 680, 300,
+           "Why basic mode\n• Protection never stops: no uninstalls\n  or \"stopped working\" reviews\n"
+           "• Free users still see the premium offer\n• Premium = unlimited AI checks, so it\n  only reaches basic mode in outages", "yellow")
+    S.note("rules", 1460, 540, 680, 360,
+           "Rules\n• No LLM calls; source = extracted\n• May need its own thresholds (eval)\n"
+           "• Closest case uses only THIS user's\n  verdicts: verdicts depend on the goal\n"
+           "• Prefer LLM-judged + corrected cases\n• Open: extracted summary first for\n  everyone? Decided by the eval", "gray")
+    S.note("lev", 1460, 960, 680, 260,
+           "Upgrade levers (proposed)\n• Popup: \"Basic mode: less accurate\n  until midnight\"\n"
+           "• Upgrade prompt when basic mode\n  allows an unclear page\n• Track retention · upgrades · appeals", "gray")
 
 
 S.save(OUT)
