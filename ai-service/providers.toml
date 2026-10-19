@@ -14,3 +14,10 @@ name = "gemini"
 base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
 model = "gemini-2.5-flash"
 api_key_env = "GEMINI_API_KEY"
+
+# Paid, so it goes last: only used when the free tiers above are exhausted or have no key.
+[[provider]]
+name = "openai"
+base_url = "https://api.openai.com/v1"
+model = "gpt-4o-mini"
+api_key_env = "OPENAI_API_KEY"

@@ -37,7 +37,7 @@ class Goal(BaseModel):
     profile: str = ""
 
 
-ContentKind = Literal["educational", "entertainment", "news", "tool", "social", "other"]
+ContentKind = Literal["educational", "entertainment", "music", "news", "tool", "social", "other"]
 
 
 class ContentFacts(BaseModel):
