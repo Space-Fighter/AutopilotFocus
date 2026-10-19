@@ -18,9 +18,7 @@ Return only a JSON object with these keys:
   e.g. "Minecraft survival gameplay, casual let's-play video"
   or "Lecture on mitosis and meiosis for biology students".
 - "topics": 1 to 4 short lowercase topic labels, most specific first, e.g. ["minecraft", "gaming"].
-- "kind": one of "educational", "entertainment", "music", "news", "tool", "social", "other".
-  Use "music" for anything meant for listening: songs, albums, playlists, mixes, radio or music streams,
-  any genre, with or without lyrics. Videos ABOUT music (reactions, reviews, interviews) are "entertainment".
+- "kind": one of "educational", "entertainment", "news", "tool", "social", "other".
 
 Base the answer only on the page data. If the data is thin, keep the summary general."""
 

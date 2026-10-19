@@ -61,9 +61,9 @@ with S.frame("overview", "System overview", 2040, 1020,
 
 
 # ------------------------------------------------------------------------ 2
-with S.frame("ext", "Chrome extension internals", 2320, 1600,
+with S.frame("ext", "Chrome extension internals", 2320, 1420,
              "Manifest V3. Content scripts run inside each page; the service worker is the brain and may be stopped by Chrome at any time."):
-    S.zone("page", 40, 200, 620, 1280, "Inside the web page (content scripts)", "blue")
+    S.zone("page", 40, 200, 620, 1100, "Inside the web page (content scripts)", "blue")
     S.box("url", 80, 250, 250, 90, "URL-change watcher\nincl. SPA navigation", size=16)
     S.box("sens", 80, 420, 250, 100, "Sensitive-page filter\npw / card fields\nbank & checkout", "red", size=16)
     S.box("extract", 380, 420, 240, 100, "Page extractor\ntitle · meta · headings\nvisible text", size=16)
@@ -71,9 +71,8 @@ with S.frame("ext", "Chrome extension internals", 2320, 1600,
     S.box("feed", 80, 780, 540, 110, "Feed cleanup (Unhook-style)\nYT Shorts (always) · home · sidebar\nInstagram · X · Reddit feeds", size=16)
     S.proposed("selectors", 80, 930, 540, 80, "Remote selector config", size=15)
     S.box("overlay", 80, 1100, 540, 110, "Block overlay\n\"Caught you slopping\" · appeal box\ndot challenge · Convince Me link", "red", size=16)
-    S.box("music", 80, 1340, 540, 110, "Music window timer\n45 s per music-site visit · Spotify · YT Music\nor verdict kind = music", size=16)
 
-    S.zone("bg", 760, 200, 720, 1280, "Background service worker", "blue")
+    S.zone("bg", 760, 200, 720, 1100, "Background service worker", "blue")
     S.box("router", 800, 250, 640, 90, "Message router (chrome.runtime)")
     S.box("sm", 800, 440, 300, 100, "Session state machine\n4 focus modes")
     S.box("alarms", 1140, 440, 300, 100, "chrome.alarms\nfocus / break timers")
@@ -83,7 +82,7 @@ with S.frame("ext", "Chrome extension internals", 2320, 1600,
     S.box("vcache", 1140, 880, 300, 100, "Local verdict cache\n(per page key)")
     S.box("client", 1140, 1110, 300, 100, "API client\nJWT · retries", "cyan")
 
-    S.zone("uiz", 1580, 200, 700, 1280, "Extension UI (React)", "blue")
+    S.zone("uiz", 1580, 200, 700, 1100, "Extension UI (React)", "blue")
     S.box("popup", 1620, 250, 300, 110, "Toolbar popup\nstart · pause · timer\n\"this was a distraction\"", size=16)
     S.box("onb", 1950, 250, 300, 110, "Onboarding\nsign-in · profile\nhours · mode · demo", "pink", size=16)
     S.box("side", 1620, 460, 300, 120, "Side panel\ngoal chat · topic-shift\nConvince Me chat", size=16)
@@ -108,7 +107,6 @@ with S.frame("ext", "Chrome extension internals", 2320, 1600,
     S.arrow("side", "router", "", via=[(1560, 520), (1560, 320)])
     S.arrow("dash", "router", "", via=[(1590, 745), (1590, 330)])
     S.arrow("selectors", "feed", "update", style="dashed")
-    S.arrow("music", "overlay", "time's up (audio keeps playing)", color="red")
 
 
 # ------------------------------------------------------------------------ 3
@@ -200,7 +198,7 @@ with S.frame("seq", "Verdict request — sequence", 2320, 1260,
 
 
 # ------------------------------------------------------------------------ 5
-with S.frame("pipe", "AI agent — verdict pipeline", 2060, 1820,
+with S.frame("pipe", "AI agent — verdict pipeline", 2060, 1640,
              "Runs on every navigation in the active tab while a focus period is active."):
     M = 560
     S.box("n0", M - 20, 130, 300, 70, "URL changes in active tab", "gray", shape="ellipse", size=16)
@@ -214,22 +212,19 @@ with S.frame("pipe", "AI agent — verdict pipeline", 2060, 1820,
     S.box("up", 60, 810, 280, 70, "Premium offer /\nmanual blocklist", "yellow", size=16)
     S.box("d5", M, 960, 260, 130, "Content facts\ncached?", "blue", shape="diamond", size=15)
     S.box("gen", M + 380, 990, 280, 70, "LLM writes content\ndescription → shared", "yellow", size=16)
-    S.box("dm", M, 1140, 260, 130, "Music?\n(kind = music)", "blue", shape="diamond", size=15)
-    S.box("am", 40, 1160, 300, 90, "Allow · music\n(45 s picking window)", "green", size=16)
-    S.box("d6", M, 1320, 260, 130, "Embedding match\nvs goal", "violet", shape="diamond", size=15)
-    S.box("ok", 80, 1350, 240, 70, "Allow", "green")
-    S.box("jj", M - 10, 1510, 280, 70, "LLM judges\ngoal + description", "yellow", size=16)
-    S.box("bl", M + 380, 1500, 300, 90, "BLOCK\n\"Caught you slopping\"", "red", size=18)
-    S.box("ap", M + 760, 1380, 320, 80, "Appeal: one-line reason\n(free: uses 1 check)", "gray", size=16)
-    S.box("cm", M + 760, 1620, 320, 80, "Dot challenge (free)\nConvince Me (premium)", "gray", size=16)
+    S.box("d6", M, 1140, 260, 130, "Embedding match\nvs goal", "violet", shape="diamond", size=15)
+    S.box("ok", 80, 1170, 240, 70, "Allow", "green")
+    S.box("jj", M - 10, 1330, 280, 70, "LLM judges\ngoal + description", "yellow", size=16)
+    S.box("bl", M + 380, 1320, 300, 90, "BLOCK\n\"Caught you slopping\"", "red", size=18)
+    S.box("ap", M + 760, 1200, 320, 80, "Appeal: one-line reason\n(free: uses 1 check)", "gray", size=16)
+    S.box("cm", M + 760, 1440, 320, 80, "Dot challenge (free)\nConvince Me (premium)", "gray", size=16)
     S.box("d7", M + 760, 960, 260, 130, "All providers\ndown → YouTube?", "red", shape="diamond", size=15)
     S.box("tag", M + 380, 1150, 260, 70, "Tag / channel parser\n→ distracting tags", "gray", size=15)
     S.box("allow2", M + 1100, 990, 260, 70, "Allow · recheck later", "green", size=16)
 
     for a, b, l in [("n0", "d1", ""), ("d1", "x1", "no"), ("d1", "d2", "yes"), ("d2", "a1", "yes"),
                     ("d2", "d3", "no"), ("d3", "r1", "yes"), ("d3", "d4", "no"), ("d4", "up", "no"),
-                    ("d4", "d5", "yes"), ("d5", "gen", "no"), ("d5", "dm", "yes"), ("gen", "dm", ""),
-                    ("dm", "am", "yes"), ("dm", "d6", "no"),
+                    ("d4", "d5", "yes"), ("d5", "gen", "no"), ("d5", "d6", "yes"), ("gen", "d6", ""),
                     ("d6", "ok", "related"), ("d6", "bl", "unrelated"), ("d6", "jj", "unclear"),
                     ("jj", "ok", "on-task"), ("jj", "bl", "distraction"),
                     ("bl", "ap", "wasn't distracted"), ("bl", "cm", "want it anyway"),
@@ -452,24 +447,22 @@ with S.frame("roadmap", "Roadmap & phases", 2160, 600,
 
 
 # ----------------------------------------------------------------------- 14
-with S.frame("pyflow", "Python AI service — page to verdict", 2320, 3200,
+with S.frame("pyflow", "Python AI service — page to verdict", 2320, 2980,
              "Step by step, with the file for each step. Dashed = later (content cache). LLMs get TEXT; vectors are only for lookup and comparison."):
     S.box("ext", 100, 190, 300, 90, "1. Extension reads page\ntitle · tags · text", "blue", size=16)
     S.box("go", 520, 190, 360, 90, "Go API\n→ POST /v1/classify (api.py)", "cyan", size=16)
 
-    S.zone("py", 80, 340, 1560, 1780, "Python AI service  (ai-service/src/ai_service/)", "yellow")
+    S.zone("py", 80, 340, 1560, 1560, "Python AI service  (ai-service/src/ai_service/)", "yellow")
     S.box("s2", 520, 420, 360, 90, "2. Embedder\npage TEXT → page vector\n(later)", "yellow", style="dashed", size=16)
     S.box("s3", 560, 610, 280, 160, "3. FAISS:\nclose stored\nvector? (later)", "blue", shape="diamond", style="dashed", size=15)
     S.box("s4a", 140, 860, 340, 100, "4a. Postgres\nget saved summary\n(later)", "violet", style="dashed", size=16)
     S.box("s4b", 860, 860, 340, 100, "4b. Describer\nsend page TEXT to LLM\n→ summary TEXT", "yellow", size=16)
     S.box("s5", 1260, 860, 340, 100, "5. Save summary → Postgres\n+ page vector → FAISS\n(later)", "violet", style="dashed", size=15)
-    S.box("dm", 560, 1040, 280, 160, "Music?\nkind = music", "blue", shape="diamond", size=15)
-    S.box("am", 1060, 1075, 300, 90, "ALLOW · music\n(no match, no judge)", "green", size=16)
-    S.box("s6", 500, 1340, 400, 100, "6. Embedder\nsummary TEXT → summary vector\ngoal TEXT → goal vector", "yellow", size=16)
-    S.box("s7", 560, 1550, 280, 160, "7. Goal matcher\ncompare vectors\n→ score", "violet", shape="diamond", size=15)
-    S.box("allow", 140, 1810, 240, 90, "ALLOW", "green", size=20)
-    S.box("judge", 540, 1800, 320, 110, "8. LLM judge (unclear only)\nsummary TEXT + goal TEXT\ndetail below ↓", "yellow", size=16)
-    S.box("block", 1020, 1810, 240, 90, "BLOCK", "red", size=20)
+    S.box("s6", 500, 1120, 400, 100, "6. Embedder\nsummary TEXT → summary vector\ngoal TEXT → goal vector", "yellow", size=16)
+    S.box("s7", 560, 1330, 280, 160, "7. Goal matcher\ncompare vectors\n→ score", "violet", shape="diamond", size=15)
+    S.box("allow", 140, 1590, 240, 90, "ALLOW", "green", size=20)
+    S.box("judge", 540, 1580, 320, 110, "8. LLM judge (unclear only)\nsummary TEXT + goal TEXT\ndetail below ↓", "yellow", size=16)
+    S.box("block", 1020, 1590, 240, 90, "BLOCK", "red", size=20)
 
     S.box("prov", 1760, 1110, 280, 110, "LLM provider APIs\n(llm.py chain)", "gray", shape="ellipse", size=16)
 
@@ -480,10 +473,8 @@ with S.frame("pyflow", "Python AI service — page to verdict", 2320, 3200,
     S.arrow("s3", "s4a", "found", style="dashed")
     S.arrow("s3", "s4b", "not found", style="dashed")
     S.arrow("s4b", "s5", "", style="dashed")
-    S.arrow("s4a", "dm", "saved summary", style="dashed")
-    S.arrow("s4b", "dm", "summary + kind")
-    S.arrow("dm", "am", "yes")
-    S.arrow("dm", "s6", "no")
+    S.arrow("s4a", "s6", "saved summary", style="dashed")
+    S.arrow("s4b", "s6", "summary TEXT")
     S.arrow("s6", "s7", "two vectors")
     S.arrow("s7", "allow", "related ≥ 0.75")
     S.arrow("s7", "judge", "unclear 0.55–0.75")
@@ -491,9 +482,9 @@ with S.frame("pyflow", "Python AI service — page to verdict", 2320, 3200,
     S.arrow("judge", "allow", "on-task")
     S.arrow("judge", "block", "distraction")
     S.arrow("s4b", "prov", "TEXT", style="dashed")
-    S.arrow("judge", "prov", "TEXT", style="dashed", via=[(700, 2020), (1900, 2020)])
+    S.arrow("judge", "prov", "TEXT", style="dashed", via=[(700, 1800), (1900, 1800)])
 
-    S.note("files", 1720, 340, 560, 360,
+    S.note("files", 1720, 340, 560, 330,
            "Files (ai-service/src/ai_service/)\n"
            "1  extension (not Python)\n"
            "2  embedder.py · later\n"
@@ -504,14 +495,14 @@ with S.frame("pyflow", "Python AI service — page to verdict", 2320, 3200,
            "6  embedder.py #1 + matcher.py #2\n"
            "7  matcher.py #2\n"
            "8  judge.py #5 + llm.py #3\n"
-           "music rule + glue 4b→8: pipeline.py #6\n"
+           "glue 4b→8: pipeline.py #6\n"
            "HTTP in/out: api.py (done)", "yellow", size=17)
-    S.note("now", 1720, 760, 560, 230,
+    S.note("now", 1720, 730, 560, 230,
            "Building now (Step 0)\n1 → 4b → 6 → 7 → 8\n\nLater (content cache)\n2 → 3 → 4a, and 5\n\nFAISS remembers what a page IS,\nnever whether it distracts.", "gray", size=17)
-    S.text(100, 2140, "Verdict (allow / block + reason) returns to the Go API, then the extension shows the block overlay.", 17, color=MUTED)
+    S.text(100, 1920, "Verdict (allow / block + reason) returns to the Go API, then the extension shows the block overlay.", 17, color=MUTED)
 
     # Step 8 in detail: what happens when the score is unclear.
-    Y0 = 2260
+    Y0 = 2040
     S.zone("detail", 80, Y0, 2160, 880, "Step 8 in detail — unclear score (0.55–0.75)", "yellow")
     S.box("u_in", 120, Y0 + 95, 240, 90, "From step 8\nscore 0.55–0.75", "violet", shape="ellipse", size=15)
     S.box("u_prompt", 450, Y0 + 75, 380, 130,

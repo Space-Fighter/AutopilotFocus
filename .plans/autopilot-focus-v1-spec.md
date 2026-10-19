@@ -25,7 +25,7 @@ Audience: **public product** (Decided). Onboarding, polish, privacy, and cost co
 | Phase | Scope |
 |---|---|
 | **v1** | Chrome extension (Manifest V3) + Go API + Python AI service. Sign-in required. All four focus modes. |
-| Later | Bypass resistance (track extension-off gaps, Incognito access, accountability partner), social features (leaderboards, friends, motivating strangers), custom ML classifier, Firefox and other browsers. |
+| Later | Bypass resistance (track extension-off gaps, Incognito access, accountability partner), social features (leaderboards, friends, motivating strangers), custom ML classifier, Firefox and other browsers. Music allowance + 45 s music picking window (parked design: `.plans/architecture/future/music/`). |
 | Much later | Gymodoro integration (sync sessions and productivity data; manage focus from Gymodoro). Desktop and mobile apps. |
 
 **Architecture rule (Decided):** focus-mode logic must be separate from any integration. Gymodoro will later be an *integration option* that syncs data. It never decides which modes are available. Keep a clean seam, such as a `SyncProvider` interface with a no-op v1 implementation.
@@ -89,7 +89,6 @@ Deliberate exceptions in v1:
 - Sensitive-page filter (§8)
 - Default site rules for Instagram, X, and Reddit (§6)
 - YouTube metadata parser, used as a fallback (§5.5)
-- **Music is always allowed** (Decided 2026-10-19): many people study with music on. The content describer labels listening content (songs, albums, playlists, streams, any genre, with or without lyrics) as kind `music`, and the pipeline allows it without a goal match or judge call. Videos *about* music (reactions, reviews, interviews) are not `music` and are judged normally.
 
 ### 5.2 What triggers a check (Decided)
 - **Only on navigation:** every URL change, including in-page navigation on single-page sites like YouTube, Reddit, and X. Detect it with the `chrome.webNavigation.onHistoryStateUpdated` event plus a content-script URL watcher.
@@ -173,14 +172,6 @@ Extension: allow, or show the block screen (§7)
 - Feed hiding (Reels and Explore, X "For you" and trending, Reddit home and popular) uses the same toggle UI. *(Proposed, carried over from the interview.)*
 
 Implementation: content scripts with CSS injection plus a `MutationObserver` for elements that load dynamically. Keep selectors in a remotely updatable config, because these sites change their markup often. *(Proposed.)*
-
-### Music picking window (Decided 2026-10-19)
-Music is always allowed (§5.1), but browsing for it is time-boxed.
-- **Music pages:** Spotify (`open.spotify.com`) and YouTube Music (`music.youtube.com`) are music by site rule, with no AI check. On YouTube, a page is music when the verdict's content kind is `music`.
-- **45-second window:** on entering a music page, the user has 45 seconds to pick music.
-- **Resets once per music site visit:** the timer starts when the user enters a music site (or a YouTube music video) and does not restart when they click more songs on the same site. It resets only after they leave for a non-music page.
-- **When time is up:** an overlay covers the page ("Music's on — back to work") while **audio keeps playing** underneath. No appeal or challenge; the user just switches tabs.
-- **Where it lives:** the extension (content script timer + overlay). The AI service only needs to return the content kind with each verdict.
 
 ---
 
