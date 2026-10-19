@@ -18,8 +18,10 @@ class Settings(BaseSettings):
     # anything between is "unclear" and goes to the LLM judge.
     related_threshold: float = 0.75
     unrelated_threshold: float = 0.55
-    # Basic mode (spec §5.9) matches an extracted summary, which may score differently.
-    # Same values for now; the eval decides whether they need to move.
+    # Thresholds for BASIC MODE = judging with no LLM at all (free cap used up, or every
+    # LLM provider down; spec §5.9). Its summary is built from the page's own title/meta/
+    # headings, which can score differently from an LLM summary, so it gets its own pair.
+    # Same values as normal mode for now; the eval decides whether they need to move.
     basic_related_threshold: float = 0.75
     basic_unrelated_threshold: float = 0.55
     llm_timeout_s: float = 20.0

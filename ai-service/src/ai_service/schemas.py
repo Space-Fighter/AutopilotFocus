@@ -59,6 +59,11 @@ class MatchResult(BaseModel):
 class Verdict(BaseModel):
     decision: Literal["allow", "block"]
     reason: str
-    # Which step made the call. extracted / nearest = basic mode (spec §5.9), no LLM.
+    # Which step made the call:
+    #   embedding  normal mode: LLM summary, decided by the embedding match
+    #   llm        normal mode: unclear score, decided by the LLM judge
+    #   extracted  basic mode (no LLM at all): page's own fields, decided by the embedding match
+    #   nearest    basic mode: copied from the user's closest past case (later)
+    #   fallback   nothing could decide, so the page is allowed and rechecked later
     source: Literal["embedding", "llm", "extracted", "nearest", "fallback"]
     similarity: float | None = None  # None when no goal match ran (e.g. fallback)

@@ -18,7 +18,9 @@ from .schemas import Goal, PageData, Verdict
 class ClassifyRequest(BaseModel):
     page: PageData
     goal: Goal
-    use_llm: bool = True  # False = basic mode (Go sends it when the free daily cap is used up)
+    # True = normal mode. False = basic mode: judge with NO LLM at all (spec §5.9).
+    # The Go API sends False when a free user's daily AI cap is used up.
+    use_llm: bool = True
 
 
 @asynccontextmanager

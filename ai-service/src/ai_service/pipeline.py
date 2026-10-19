@@ -1,8 +1,18 @@
 """Ties the steps together: describe -> match -> (judge if unclear) -> verdict.
 
-Board frame 5: the bottom half of "AI agent — verdict pipeline".
-Board frame 15: basic mode, the same idea with no LLM (spec §5.9).
-No caches yet (no Postgres or FAISS in Step 0).
+Two modes. Both use the embedding model to compare the page with the goal:
+
+  NORMAL MODE  LLM summary  -> embedding match -> unclear? ask the LLM judge
+  BASIC MODE   page's own title/meta/headings -> embedding match -> unclear? allow
+               (later: copy the closest past case, spec §5.9 step 3)
+
+What "basic" means: judging a page with NO LLM AT ALL. It is not "the free tier"
+and not "embeddings instead of the judge". It runs in two situations:
+  1. A free user's daily AI cap is used up: the Go API sends use_llm=False.
+  2. Every LLM provider is down: describe_content fails, so classify switches to it.
+Premium users only reach it in case 2.
+
+Board: frame 5 (normal mode), frame 15 (basic mode). No caches yet (no Postgres or FAISS).
 """
 
 import logging
@@ -37,7 +47,10 @@ def classify(
 ) -> Verdict:
     """Return allow/block for this page against this goal.
 
-    use_llm=False is basic mode: the Go API sends it when a free user's daily AI cap is used up.
+    use_llm=True  -> normal mode (LLM summary, LLM judge for unclear cases).
+    use_llm=False -> basic mode, no LLM at all. The Go API sends False when a free
+                     user's daily AI cap is used up. Normal mode also falls back to
+                     basic mode by itself if the LLM describer fails.
     """
     if not use_llm:
         return basic_classify(page, goal, embedder, settings)
@@ -66,8 +79,13 @@ def classify(
 
 
 def basic_classify(page: PageData, goal: Goal, embedder: Embedder, settings: Settings) -> Verdict:
-    """Basic mode (spec §5.9): judge from the page's own fields, with no LLM call."""
+    """Basic mode (spec §5.9): judge a page with NO LLM call at all.
+
+    The summary comes from the page's own fields (extracted_facts), the embedding
+    match is the same as normal mode, and there is no LLM judge for unclear cases.
+    """
     facts = extracted_facts(page)
+    # basic=True: "this summary was made without an LLM", so use the basic-mode thresholds.
     result = match(facts, goal, embedder, settings, basic=True)
     if result.band == "related":
         return Verdict(decision="allow", reason=f"Fits your goal: {facts.summary}.",

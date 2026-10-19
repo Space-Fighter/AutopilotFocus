@@ -1,7 +1,9 @@
 """Step 0 accuracy test: run the pipeline over labelled (page, goal) pairs and report results.
 
 Run from ai-service/:  uv run python eval/run_eval.py            (normal mode)
-                       uv run python eval/run_eval.py --basic    (basic mode, no LLM: spec §5.9)
+                       uv run python eval/run_eval.py --basic    (basic mode)
+Basic mode = judging with NO LLM at all, as when a free user's daily AI cap is used up
+or every LLM provider is down (spec §5.9). Compare the two runs to see what it costs in accuracy.
 Add rows to eval/dataset.jsonl. Aim for 50-100 real pages, half "allow" and half "block".
 """
 
