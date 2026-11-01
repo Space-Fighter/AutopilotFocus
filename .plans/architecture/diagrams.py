@@ -379,8 +379,8 @@ with S.frame("goal", "Goal model & intent capture", 2340, 1440,
 
 # ----------------------------------------------------------------------- 10
 with S.frame("db", "Database schema (Postgres)", 1460, 1560,
-             "Decisions kept with user ID (dashboard history, personalisation); aggregates forever; content facts shared."):
-    S.table("users", 60, 180, "users", ["id           uuid  PK", "email        text  UQ", "auth_provider text",
+             "Created by db/migrations/*.sql. Deleting a user cascades to all their rows; content facts shared."):
+    S.table("users", 60, 180, "users", ["id           uuid  PK", "email        text  UQ", "auth_provider text", "password_hash text NULL",
                                          "plan         text", "profile      jsonb", "focus_hours  jsonb",
                                          "created_at   ts"])
     S.table("daily", 60, 620, "daily_stats", ["user_id      uuid  PK FK", "day          date  PK",
@@ -391,16 +391,17 @@ with S.frame("db", "Database schema (Postgres)", 1460, 1560,
                                            "goal_id    uuid FK", "started_at ts", "ended_at   ts"])
     S.table("verd", 500, 580, "verdicts",
             ["id           uuid PK", "user_id      uuid FK", "session_id   uuid FK",
-             "content_id   uuid FK", "goal_id      uuid FK", "decision     text",
+             "content_id   bigint FK", "goal_id      uuid FK", "decision     text",
              "reason       text", "source       text", "weight       real",
              "confirmed    bool", "user_reason  text NULL", "page_vec     vector(384)",
              "goal_vec     vector(384)", "combined_vec vector(768) HNSW", "visit_count  int",
              "first_seen   ts", "last_seen    ts"])
     S.table("appl", 500, 1340, "appeals", ["id         uuid PK", "verdict_id uuid FK", "kind  text  won bool"])
-    S.table("facts", 940, 620, "content_facts", ["id          uuid PK", "content_key text UQ",
-                                                 "description text", "page_vec    vector(384)",
-                                                 "created_at  ts"], color="yellow")
-    S.table("goals", 940, 1000, "goals", ["id         uuid PK", "user_id    uuid FK", "text       text",
+    S.table("facts", 940, 620, "content_facts", ["id          bigint PK", "content_key text UQ",
+                                                 "summary     text", "topics      text[]",
+                                                 "kind        text", "page_vec    vector(384)",
+                                                 "summary_vec vector(384)", "created_at  ts"], color="yellow")
+    S.table("goals", 940, 1080, "goals", ["id         uuid PK", "user_id    uuid FK", "text       text",
                                           "vec        vector(384)", "kind  saved|session|inferred",
                                           "status active|pending|rejected", "created_at ts"])
     S.note("ret", 940, 180, 460, 330,

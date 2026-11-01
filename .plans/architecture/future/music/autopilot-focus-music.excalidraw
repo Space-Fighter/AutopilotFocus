@@ -27581,7 +27581,7 @@
    "type": "text",
    "x": 40,
    "y": 5538,
-   "width": 1117.08,
+   "width": 1012.68,
    "height": 22.5,
    "angle": 0,
    "strokeColor": "#495057",
@@ -27605,8 +27605,8 @@
    "customData": {
     "generated": true
    },
-   "text": "Decisions kept with user ID (dashboard history, personalisation); aggregates forever; content facts shared.",
-   "originalText": "Decisions kept with user ID (dashboard history, personalisation); aggregates forever; content facts shared.",
+   "text": "Created by db/migrations/*.sql. Deleting a user cascades to all their rows; content facts shared.",
+   "originalText": "Created by db/migrations/*.sql. Deleting a user cascades to all their rows; content facts shared.",
    "fontSize": 18,
    "fontFamily": 1,
    "textAlign": "left",
@@ -27694,7 +27694,7 @@
    "x": 60,
    "y": 5682,
    "width": 320,
-   "height": 190,
+   "height": 214,
    "angle": 0,
    "strokeColor": "#6741d9",
    "backgroundColor": "#ffffff",
@@ -27741,9 +27741,9 @@
    "id": "db.users:label",
    "type": "text",
    "x": 74,
-   "y": 5711.375,
-   "width": 189.0,
-   "height": 131.25,
+   "y": 5714.0,
+   "width": 207.0,
+   "height": 150.0,
    "angle": 0,
    "strokeColor": "#1e1e1e",
    "backgroundColor": "transparent",
@@ -27766,8 +27766,8 @@
    "customData": {
     "generated": true
    },
-   "text": "id           uuid  PK\nemail        text  UQ\nauth_provider text\nplan         text\nprofile      jsonb\nfocus_hours  jsonb\ncreated_at   ts",
-   "originalText": "id           uuid  PK\nemail        text  UQ\nauth_provider text\nplan         text\nprofile      jsonb\nfocus_hours  jsonb\ncreated_at   ts",
+   "text": "id           uuid  PK\nemail        text  UQ\nauth_provider text\npassword_hash text NULL\nplan         text\nprofile      jsonb\nfocus_hours  jsonb\ncreated_at   ts",
+   "originalText": "id           uuid  PK\nemail        text  UQ\nauth_provider text\npassword_hash text NULL\nplan         text\nprofile      jsonb\nfocus_hours  jsonb\ncreated_at   ts",
    "fontSize": 15,
    "fontFamily": 3,
    "textAlign": "left",
@@ -28245,8 +28245,8 @@
    "customData": {
     "generated": true
    },
-   "text": "id           uuid PK\nuser_id      uuid FK\nsession_id   uuid FK\ncontent_id   uuid FK\ngoal_id      uuid FK\ndecision     text\nreason       text\nsource       text\nweight       real\nconfirmed    bool\nuser_reason  text NULL\npage_vec     vector(384)\ngoal_vec     vector(384)\ncombined_vec vector(768) HNSW\nvisit_count  int\nfirst_seen   ts\nlast_seen    ts",
-   "originalText": "id           uuid PK\nuser_id      uuid FK\nsession_id   uuid FK\ncontent_id   uuid FK\ngoal_id      uuid FK\ndecision     text\nreason       text\nsource       text\nweight       real\nconfirmed    bool\nuser_reason  text NULL\npage_vec     vector(384)\ngoal_vec     vector(384)\ncombined_vec vector(768) HNSW\nvisit_count  int\nfirst_seen   ts\nlast_seen    ts",
+   "text": "id           uuid PK\nuser_id      uuid FK\nsession_id   uuid FK\ncontent_id   bigint FK\ngoal_id      uuid FK\ndecision     text\nreason       text\nsource       text\nweight       real\nconfirmed    bool\nuser_reason  text NULL\npage_vec     vector(384)\ngoal_vec     vector(384)\ncombined_vec vector(768) HNSW\nvisit_count  int\nfirst_seen   ts\nlast_seen    ts",
+   "originalText": "id           uuid PK\nuser_id      uuid FK\nsession_id   uuid FK\ncontent_id   bigint FK\ngoal_id      uuid FK\ndecision     text\nreason       text\nsource       text\nweight       real\nconfirmed    bool\nuser_reason  text NULL\npage_vec     vector(384)\ngoal_vec     vector(384)\ncombined_vec vector(768) HNSW\nvisit_count  int\nfirst_seen   ts\nlast_seen    ts",
    "fontSize": 15,
    "fontFamily": 3,
    "textAlign": "left",
@@ -28487,7 +28487,7 @@
    "x": 940,
    "y": 6122,
    "width": 320,
-   "height": 142,
+   "height": 214,
    "angle": 0,
    "strokeColor": "#e67700",
    "backgroundColor": "#ffffff",
@@ -28526,9 +28526,9 @@
    "id": "db.facts:label",
    "type": "text",
    "x": 954,
-   "y": 6146.125,
+   "y": 6154.0,
    "width": 207.0,
-   "height": 93.75,
+   "height": 150.0,
    "angle": 0,
    "strokeColor": "#1e1e1e",
    "backgroundColor": "transparent",
@@ -28551,8 +28551,8 @@
    "customData": {
     "generated": true
    },
-   "text": "id          uuid PK\ncontent_key text UQ\ndescription text\npage_vec    vector(384)\ncreated_at  ts",
-   "originalText": "id          uuid PK\ncontent_key text UQ\ndescription text\npage_vec    vector(384)\ncreated_at  ts",
+   "text": "id          bigint PK\ncontent_key text UQ\nsummary     text\ntopics      text[]\nkind        text\npage_vec    vector(384)\nsummary_vec vector(384)\ncreated_at  ts",
+   "originalText": "id          bigint PK\ncontent_key text UQ\nsummary     text\ntopics      text[]\nkind        text\npage_vec    vector(384)\nsummary_vec vector(384)\ncreated_at  ts",
    "fontSize": 15,
    "fontFamily": 3,
    "textAlign": "left",
@@ -28565,7 +28565,7 @@
    "id": "db.goals:head",
    "type": "rectangle",
    "x": 940,
-   "y": 6460,
+   "y": 6540,
    "width": 320,
    "height": 42,
    "angle": 0,
@@ -28597,7 +28597,7 @@
    "id": "db.goals:name",
    "type": "text",
    "x": 954,
-   "y": 6467.875,
+   "y": 6547.875,
    "width": 57.75000000000001,
    "height": 26.25,
    "angle": 0,
@@ -28638,7 +28638,7 @@
    "id": "db.goals",
    "type": "rectangle",
    "x": 940,
-   "y": 6502,
+   "y": 6582,
    "width": 320,
    "height": 190,
    "angle": 0,
@@ -28679,7 +28679,7 @@
    "id": "db.goals:label",
    "type": "text",
    "x": 954,
-   "y": 6531.375,
+   "y": 6611.375,
    "width": 270.0,
    "height": 131.25,
    "angle": 0,
@@ -28794,9 +28794,9 @@
    "id": "db._133",
    "type": "arrow",
    "x": 500.0,
-   "y": 5769.363636363636,
+   "y": 5773.727272727273,
    "width": 120.0,
-   "height": 3.272727272727934,
+   "height": 6.545454545454049,
    "angle": 0,
    "strokeColor": "#1e1e1e",
    "backgroundColor": "transparent",
@@ -28833,7 +28833,7 @@
     ],
     [
      -120.0,
-     3.272727272727934
+     6.545454545454049
     ]
    ],
    "lastCommittedPoint": null,
@@ -28854,7 +28854,7 @@
    "id": "db._133:label",
    "type": "text",
    "x": 409.55,
-   "y": 5761.625,
+   "y": 5767.625,
    "width": 60.9,
    "height": 18.75,
    "angle": 0,
@@ -28893,9 +28893,9 @@
    "id": "db._134",
    "type": "arrow",
    "x": 500.0,
-   "y": 6107.909090909091,
-   "width": 199.61538461538464,
-   "height": 235.909090909091,
+   "y": 6112.272727272727,
+   "width": 187.32283464566933,
+   "height": 216.27272727272702,
    "angle": 0,
    "strokeColor": "#1e1e1e",
    "backgroundColor": "transparent",
@@ -28931,8 +28931,8 @@
      0.0
     ],
     [
-     -199.61538461538464,
-     -235.909090909091
+     -187.32283464566933,
+     -216.27272727272702
     ]
    ],
    "lastCommittedPoint": null,
@@ -28952,8 +28952,8 @@
   {
    "id": "db._134:label",
    "type": "text",
-   "x": 369.7423076923077,
-   "y": 5980.579545454546,
+   "x": 375.88858267716535,
+   "y": 5994.761363636364,
    "width": 60.9,
    "height": 18.75,
    "angle": 0,
@@ -29091,9 +29091,9 @@
    "id": "db._136",
    "type": "arrow",
    "x": 820.0,
-   "y": 6259.181818181818,
+   "y": 6272.272727272727,
    "width": 120.0,
-   "height": 28.363636363636033,
+   "height": 18.54545454545405,
    "angle": 0,
    "strokeColor": "#1e1e1e",
    "backgroundColor": "transparent",
@@ -29130,7 +29130,7 @@
     ],
     [
      120.0,
-     -28.363636363636033
+     -18.54545454545405
     ]
    ],
    "lastCommittedPoint": null,
@@ -29151,7 +29151,7 @@
    "id": "db._136:label",
    "type": "text",
    "x": 836.5,
-   "y": 6235.625,
+   "y": 6253.625,
    "width": 87.0,
    "height": 18.75,
    "angle": 0,
@@ -29190,9 +29190,9 @@
    "id": "db._137",
    "type": "arrow",
    "x": 820.0,
-   "y": 6406.090909090909,
-   "width": 140.66666666666674,
-   "height": 95.90909090909099,
+   "y": 6435.181818181818,
+   "width": 170.0,
+   "height": 146.81818181818198,
    "angle": 0,
    "strokeColor": "#1e1e1e",
    "backgroundColor": "transparent",
@@ -29228,8 +29228,8 @@
      0.0
     ],
     [
-     140.66666666666674,
-     95.90909090909099
+     170.0,
+     146.81818181818198
     ]
    ],
    "lastCommittedPoint": null,
@@ -29249,8 +29249,8 @@
   {
    "id": "db._137:label",
    "type": "text",
-   "x": 859.8833333333333,
-   "y": 6444.670454545454,
+   "x": 874.55,
+   "y": 6499.215909090909,
    "width": 60.9,
    "height": 18.75,
    "angle": 0,
@@ -29390,7 +29390,7 @@
    "x": 220.0,
    "y": 6122.0,
    "width": 0.0,
-   "height": 250.0,
+   "height": 226.0,
    "angle": 0,
    "strokeColor": "#1e1e1e",
    "backgroundColor": "transparent",
@@ -29427,7 +29427,7 @@
     ],
     [
      0.0,
-     -250.0
+     -226.0
     ]
    ],
    "lastCommittedPoint": null,
@@ -29448,7 +29448,7 @@
    "id": "db._139:label",
    "type": "text",
    "x": 189.55,
-   "y": 5987.625,
+   "y": 5999.625,
    "width": 60.9,
    "height": 18.75,
    "angle": 0,
