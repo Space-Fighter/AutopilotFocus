@@ -13,8 +13,8 @@ for a **goal**; while On, pages that don't fit the goal are blocked, with one **
 | 2 | MVP — Chrome extension |
 | 3 | MVP — one page, start to finish |
 | 4 | MVP — Python AI service (built) |
-| 5 | MVP — build order |
-| 6 | MVP — goal handling |
+| 5 | MVP — goal handling |
+| 6 | MVP — build order |
 
 ## In the MVP
 

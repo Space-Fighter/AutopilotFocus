@@ -125,6 +125,26 @@ with S.frame("py", "MVP — Python AI service (built)", 2320, 1000,
 
 
 # ------------------------------------------------------------------------ 5
+with S.frame("goal", "MVP — goal handling", 2200, 900,
+             "One goal while blocking is On, typed by the student. No goal list, no goal checks yet."):
+    S.box("pop", 60, 220, 360, 120, "Popup: turn blocking On\n→ \"What are you\nworking on?\" (required)", "pink", size=16)
+    S.box("store", 540, 220, 360, 120, "Current goal\nchrome.storage\n(until turned Off)", "violet", size=16)
+    S.box("req", 1020, 220, 360, 120, "Sent with every\nverdict request\n{page, goal}", "cyan", size=16)
+    S.box("py", 1500, 220, 360, 120, "Python: embedding match\n+ LLM judge use this goal", "yellow", size=16)
+    S.box("edit", 540, 500, 360, 110, "Edit goal in the popup\nany time → next pages\nuse the new goal", "pink", size=16)
+    S.box("ov", 1020, 500, 360, 110, "Block overlay shows it:\n\"… isn't part of: <goal>\"", "red", size=16)
+
+    S.arrow("pop", "store", "")
+    S.arrow("store", "req", "")
+    S.arrow("req", "py", "")
+    S.arrow("edit", "store", "")
+    S.arrow("py", "ov", "block + reason", via=[(1680, 555)])
+    S.note("later", 60, 700, 1300, 140,
+           "Later (full board frame 9): saved goal list · onboarding goals · general goal (safe categories)\n"
+           "LLM goal check · inferred goals for auto-started sessions · topic-shift prompt · edit goal from the block screen", "gray", size=16)
+
+
+# ------------------------------------------------------------------------ 6
 with S.frame("plan", "MVP — build order", 2200, 760,
              "Get one real page blocked end to end first, then make it nicer. Each step ends with something you can try."):
     steps = [
@@ -147,25 +167,6 @@ with S.frame("plan", "MVP — build order", 2200, 760,
     S.note("parked", 1160, 470, 980, 220,
            "Parked (designs kept in .plans/):\nother focus modes · Smart Focus · Convince Me · dot challenge\n"
            "feed cleanup · analytics · music · goal lists + goal checks\nclosest-case search · floating prompt · FAISS · pgvector", "gray", size=17)
-
-# ------------------------------------------------------------------------ 6
-with S.frame("goal", "MVP — goal handling", 2200, 900,
-             "One goal while blocking is On, typed by the student. No goal list, no goal checks yet."):
-    S.box("pop", 60, 220, 360, 120, "Popup: turn blocking On\n→ \"What are you\nworking on?\" (required)", "pink", size=16)
-    S.box("store", 540, 220, 360, 120, "Current goal\nchrome.storage\n(until turned Off)", "violet", size=16)
-    S.box("req", 1020, 220, 360, 120, "Sent with every\nverdict request\n{page, goal}", "cyan", size=16)
-    S.box("py", 1500, 220, 360, 120, "Python: embedding match\n+ LLM judge use this goal", "yellow", size=16)
-    S.box("edit", 540, 500, 360, 110, "Edit goal in the popup\nany time → next pages\nuse the new goal", "pink", size=16)
-    S.box("ov", 1020, 500, 360, 110, "Block overlay shows it:\n\"… isn't part of: <goal>\"", "red", size=16)
-
-    S.arrow("pop", "store", "")
-    S.arrow("store", "req", "")
-    S.arrow("req", "py", "")
-    S.arrow("edit", "store", "")
-    S.arrow("py", "ov", "block + reason", via=[(1680, 555)])
-    S.note("later", 60, 700, 1300, 140,
-           "Later (full board frame 9): saved goal list · onboarding goals · general goal (safe categories)\n"
-           "LLM goal check · inferred goals for auto-started sessions · topic-shift prompt · edit goal from the block screen", "gray", size=16)
 
 
 S.save(OUT)
