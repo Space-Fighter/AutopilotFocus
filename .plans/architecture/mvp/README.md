@@ -14,6 +14,7 @@ AI blocking of pages that don't fit the goal, and one **"I wasn't distracted"** 
 | 3 | MVP — one page, start to finish |
 | 4 | MVP — Python AI service (built) |
 | 5 | MVP — build order |
+| 6 | MVP — goal handling |
 
 ## In the MVP
 

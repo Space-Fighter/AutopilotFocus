@@ -97,28 +97,33 @@ with S.frame("seq", "MVP — one page, start to finish", 2300, 1140,
 
 
 # ------------------------------------------------------------------------ 4
-with S.frame("py", "MVP — Python AI service (built)", 2100, 1000,
-             "Already working in ai-service/. The MVP assumes an LLM is available; the no-LLM fallback is parked for later."):
-    S.box("in", 80, 210, 280, 90, "page + goal", "gray", shape="ellipse", size=16)
-    S.box("desc", 480, 200, 360, 110, "Describer (LLM)\npage → summary\ndescriber.py", "yellow", size=15)
-    S.box("m1", 520, 430, 280, 160, "Embedding match\nvs goal\nmatcher.py", "violet", shape="diamond", size=15)
-    S.box("ok1", 1000, 410, 220, 80, "ALLOW", "green", size=18)
-    S.box("bl1", 1000, 550, 220, 80, "BLOCK", "red", size=18)
-    S.box("judge", 500, 720, 320, 100, "LLM judge (unclear only)\njudge.py", "yellow", size=15)
-    S.box("jout", 1000, 730, 220, 80, "ALLOW / BLOCK", "gray", size=16)
-    S.box("fail", 1000, 210, 340, 90, "No LLM answered →\nallow + recheck later", "green", style="dashed", size=15)
+with S.frame("py", "MVP — Python AI service (built)", 2320, 1000,
+             "Already working in ai-service/. Dashed = later: the FAISS summary cache (saves LLM calls) and the no-LLM fallback."):
+    S.box("in", 60, 220, 240, 90, "page + goal", "gray", shape="ellipse", size=16)
+    S.box("fs", 400, 180, 280, 170, "Similar page\nalready described?\nFAISS (later)", "blue", shape="diamond", style="dashed", size=14)
+    S.box("reuse", 400, 450, 280, 100, "Reuse its saved\nsummary\n(Postgres, later)", "violet", style="dashed", size=15)
+    S.box("desc", 820, 210, 340, 110, "Describer (LLM)\npage → summary\ndescriber.py", "yellow", size=15)
+    S.box("m1", 860, 440, 280, 160, "Embedding match\nvs goal\nmatcher.py", "violet", shape="diamond", size=15)
+    S.box("ok1", 1320, 420, 220, 80, "ALLOW", "green", size=18)
+    S.box("bl1", 1320, 560, 220, 80, "BLOCK", "red", size=18)
+    S.box("judge", 840, 740, 320, 100, "LLM judge (unclear only)\njudge.py", "yellow", size=15)
+    S.box("jout", 1320, 750, 220, 80, "ALLOW / BLOCK", "gray", size=16)
+    S.box("fail", 1320, 220, 300, 90, "No LLM answered →\nallow + recheck later", "green", style="dashed", size=15)
 
-    S.arrow("in", "desc")
+    S.arrow("in", "fs")
+    S.arrow("fs", "desc", "not found\n(MVP: always)")
+    S.arrow("fs", "reuse", "found", style="dashed")
+    S.arrow("reuse", "m1", "", style="dashed")
     S.arrow("desc", "m1", "summary")
     S.arrow("desc", "fail", "fails", style="dashed", color="red")
     S.arrow("m1", "ok1", "related")
     S.arrow("m1", "bl1", "unrelated")
     S.arrow("m1", "judge", "unclear")
     S.arrow("judge", "jout", "")
-    S.note("files", 1460, 400, 560, 330,
+    S.note("files", 1700, 400, 560, 360,
            "Files (ai-service/)\n• pipeline.py: the flow\n• describer.py\n• matcher.py + embedder.py\n"
            "• judge.py + llm.py (Groq → Gemini → OpenAI)\n• api.py: HTTP for Go\n• eval/: accuracy test\n\n"
-           "Parked: basic mode (future/basic-mode/)", "yellow", size=16)
+           "Later: FAISS summary cache (full board\nframe 14, steps 2–5) · basic mode", "yellow", size=16)
 
 
 # ------------------------------------------------------------------------ 5
@@ -144,6 +149,25 @@ with S.frame("plan", "MVP — build order", 2200, 760,
     S.note("parked", 1160, 470, 980, 220,
            "Parked (designs kept in .plans/):\nother focus modes · Smart Focus · Convince Me · dot challenge\n"
            "feed cleanup · analytics · music · goal lists + goal checks\nclosest-case search · floating prompt · FAISS · pgvector", "gray", size=17)
+
+# ------------------------------------------------------------------------ 6
+with S.frame("goal", "MVP — goal handling", 2200, 900,
+             "One goal per session, typed by the student. No goal list, no goal checks yet."):
+    S.box("pop", 60, 220, 360, 120, "Popup: start session\nduration + \"What are you\nworking on?\" (required)", "pink", size=16)
+    S.box("store", 540, 220, 360, 120, "Session goal\nchrome.storage\n(this session only)", "violet", size=16)
+    S.box("req", 1020, 220, 360, 120, "Sent with every\nverdict request\n{page, goal}", "cyan", size=16)
+    S.box("py", 1500, 220, 360, 120, "Python: embedding match\n+ LLM judge use this goal", "yellow", size=16)
+    S.box("edit", 540, 500, 360, 110, "Edit goal in the popup\nany time → next pages\nuse the new goal", "pink", size=16)
+    S.box("ov", 1020, 500, 360, 110, "Block overlay shows it:\n\"… isn't part of: <goal>\"", "red", size=16)
+
+    S.arrow("pop", "store", "")
+    S.arrow("store", "req", "")
+    S.arrow("req", "py", "")
+    S.arrow("edit", "store", "")
+    S.arrow("py", "ov", "block + reason", via=[(1680, 555)])
+    S.note("later", 60, 700, 1300, 140,
+           "Later (full board frame 9): saved goal list · onboarding goals · general goal (safe categories)\n"
+           "LLM goal check · inferred goals for auto-started sessions · topic-shift prompt · edit goal from the block screen", "gray", size=16)
 
 
 S.save(OUT)
