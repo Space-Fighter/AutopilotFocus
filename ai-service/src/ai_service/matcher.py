@@ -35,10 +35,14 @@ class GoalVectors:
         self._embedder = embedder
         self._cache: dict[str, np.ndarray] = {}
 
-    # YOU TYPE #10
     def get(self, goal: Goal) -> np.ndarray:
         """Return the vector for goal_text(goal): from the cache, or embed it and remember it."""
-        raise NotImplementedError("YOU TYPE #10")
+        text = goal_text(goal)
+        vec = self._cache.get(text)  # dict.get returns None when the key isn't there
+        if vec is None:
+            vec = self._embedder.embed(text)
+            self._cache[text] = vec
+        return vec
 
 
 def match(facts_vec: np.ndarray, goal_vec: np.ndarray, settings: Settings) -> MatchResult:

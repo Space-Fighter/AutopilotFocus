@@ -35,12 +35,17 @@ class SummaryIndex:
             vecs = np.vstack([r.page_vec for r in rows]).astype(np.float32)
             self._index.add_with_ids(vecs, ids)
 
-    # YOU TYPE #8
     def add(self, row_id: int, page_vec: np.ndarray) -> None:
         """Add one page vector under its content_facts.id."""
-        raise NotImplementedError("YOU TYPE #8")
+        # FAISS works on batches: a 2-D float32 array of shape (n, 384) plus n int64 IDs. Here n = 1.
+        vec = np.asarray(page_vec, dtype=np.float32).reshape(1, -1)
+        self._index.add_with_ids(vec, np.array([row_id], dtype=np.int64))
 
-    # YOU TYPE #8
     def search(self, page_vec: np.ndarray) -> tuple[int, float] | None:
         """Return (content_facts.id, similarity) of the closest stored page, or None if empty."""
-        raise NotImplementedError("YOU TYPE #8")
+        if self._index.ntotal == 0:
+            return None
+        query = np.asarray(page_vec, dtype=np.float32).reshape(1, -1)
+        # k=1: only the single closest page. Results come back as (n_queries, k) arrays.
+        scores, ids = self._index.search(query, 1)
+        return int(ids[0][0]), float(scores[0][0])

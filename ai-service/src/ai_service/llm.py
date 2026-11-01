@@ -51,8 +51,13 @@ class ProviderChain:
                 return json.loads(response.choices[0].message.content)
             except APIStatusError as e:
                 # 429 = rate limit or quota, 5xx = provider broken: try the next one.
-                # Anything else (400 bad request, 401 bad key) is our bug, so fail loudly.
-                if e.status_code != 429 and e.status_code < 500:
+                # 401/403/404 = this provider is misconfigured (bad key, no access, model removed):
+                #   log it as an ERROR so it gets fixed, but keep serving with the next provider.
+                # Anything else (400 bad request) is a bug in our request, so fail loudly.
+                if e.status_code in (401, 403, 404):
+                    log.error("LLM provider %s misconfigured (HTTP %s): %s",
+                              provider.name, e.status_code, e.message)
+                elif e.status_code != 429 and e.status_code < 500:
                     raise
                 errors.append(f"{provider.name}: HTTP {e.status_code}")
             except APIConnectionError as e:  # also covers timeouts

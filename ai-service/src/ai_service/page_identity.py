@@ -7,12 +7,14 @@
 Board: full board frame 14, steps 2-3.
 """
 
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlencode, urlsplit
 
 from .schemas import PageData
 
+# Query parameters that only track where a click came from; they never change the content.
+TRACKING_PARAMS = {"fbclid", "gclid"}
 
-# YOU TYPE #7
+
 def content_key(page: PageData) -> str:
     """Return a stable key for this exact content.
 
@@ -21,7 +23,22 @@ def content_key(page: PageData) -> str:
     without tracking parameters (utm_*, fbclid, gclid). The #fragment is dropped.
     e.g. "https://www.Example.com/item/?id=7&utm_source=x#top" -> "example.com/item?id=7"
     """
-    raise NotImplementedError("YOU TYPE #7")
+    # The video ID is the most exact key there is; timestamps and playlists don't change the video.
+    if page.youtube and page.youtube.video_id:
+        return f"youtube:{page.youtube.video_id}"
+
+    parts = urlsplit(page.url)  # scheme, netloc (host), path, query, fragment
+    host = parts.netloc.lower().removeprefix("www.")
+    path = parts.path.rstrip("/")
+    query = [
+        (k, v)
+        for k, v in parse_qsl(parts.query)
+        if not k.startswith("utm_") and k not in TRACKING_PARAMS
+    ]
+    key = host + path
+    if query:
+        key += "?" + urlencode(sorted(query))  # sorted: ?a=1&b=2 and ?b=2&a=1 are the same page
+    return key
 
 
 def page_text(page: PageData) -> str:
