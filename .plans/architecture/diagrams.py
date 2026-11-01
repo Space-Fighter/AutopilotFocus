@@ -234,28 +234,36 @@ with S.frame("pipe", "AI agent — verdict pipeline", 2060, 1640,
 
 
 # ------------------------------------------------------------------------ 6
-with S.frame("block", "Block screen — appeal & Convince Me", 2160, 1180,
+with S.frame("block", "Block screen — appeal, goal edit & Convince Me", 2160, 1300,
              "Every outcome is logged: successful appeals are the v1 accuracy metric."):
-    S.box("bl", 60, 520, 300, 110, "BLOCK screen\n\"Caught you slopping\"", "red", size=18)
-    S.box("says", 450, 505, 260, 140, "User says?", "pink", shape="diamond")
+    S.box("bl", 40, 510, 340, 140, "BLOCK screen\n\"Caught you slopping\"\nreason + the goal used", "red", size=17)
+    S.box("says", 450, 505, 260, 150, "User picks?", "pink", shape="diamond")
 
     S.box("reason", 820, 230, 300, 100, "One-line reason\n\"how does this help?\"", "gray", size=16)
     S.box("judge", 1200, 200, 280, 160, "AI judge:\nconvincing?\n(free: 1 check)", "yellow", shape="diamond", size=15)
     S.box("pass", 1600, 160, 300, 100, "Pass for this page\n+ logged correction", "green", size=16)
     S.box("stay1", 1600, 330, 300, 80, "Stays blocked", "red")
 
-    S.box("plan", 820, 790, 260, 140, "Plan?", "blue", shape="diamond")
-    S.box("dot", 1200, 680, 300, 110, "Dot challenge\nclick moving dot ~30×", "gray", size=16)
-    S.box("cm", 1200, 900, 300, 120, "Convince Me\npersona chat\nsavage · coach · chill", "violet", size=16)
-    S.box("cmj", 1580, 880, 300, 160, "Convinced?\nharder after each\nwin today", "yellow", shape="diamond", size=15)
-    S.box("timed", 1600, 690, 300, 90, "Timed pass", "green")
-    S.box("stay2", 1940, 925, 190, 80, "Stays\nblocked", "red", size=16)
+    S.box("edit", 820, 520, 300, 110, "Edit goal\nadd to list or\njust this session", "pink", size=16)
+    S.box("gchk", 1200, 495, 280, 160, "LLM goal check:\nreal task?", "yellow", shape="diamond", size=15)
+    S.box("rechk", 1600, 520, 300, 110, "Recheck page with\nnew goal → unblock\nonly if it fits", "yellow", size=16)
+
+    S.box("plan", 820, 890, 260, 140, "Plan?", "blue", shape="diamond")
+    S.box("dot", 1200, 780, 300, 110, "Dot challenge\nclick moving dot ~30×", "gray", size=16)
+    S.box("cm", 1200, 1000, 300, 120, "Convince Me\npersona chat\nsavage · coach · chill", "violet", size=16)
+    S.box("cmj", 1580, 980, 300, 160, "Convinced?\nharder after each\nwin today", "yellow", shape="diamond", size=15)
+    S.box("timed", 1600, 790, 300, 90, "Timed pass", "green")
+    S.box("stay2", 1940, 1025, 190, 80, "Stays\nblocked", "red", size=16)
 
     S.arrow("bl", "says")
     S.arrow("says", "reason", "wasn't distracted")
     S.arrow("reason", "judge")
     S.arrow("judge", "pass", "yes")
     S.arrow("judge", "stay1", "no")
+    S.arrow("says", "edit", "edit goal")
+    S.arrow("edit", "gchk")
+    S.arrow("gchk", "rechk", "yes")
+    S.arrow("gchk", "stay1", "no")
     S.arrow("says", "plan", "want it anyway")
     S.arrow("plan", "dot", "free")
     S.arrow("plan", "cm", "premium")
@@ -263,9 +271,10 @@ with S.frame("block", "Block screen — appeal & Convince Me", 2160, 1180,
     S.arrow("cm", "cmj")
     S.arrow("cmj", "timed", "yes")
     S.arrow("cmj", "stay2", "no")
-    S.note("rules", 60, 820, 600, 260,
+    S.note("rules", 40, 880, 620, 300,
            "Rules\n• Appeal win → pass for that exact page/video\n• Want-it-anyway win → timed pass\n"
-           "• Convince Me is premium only (AI cost)\n• Free appeals count toward the daily cap\n"
+           "• Goal edit: LLM checks it is a real task\n  (\"watch Minecraft\" rejected)\n"
+           "• Convince Me is premium only (AI cost)\n• Free appeals + goal checks use the daily cap\n"
            "• Instagram / X / Reddit pages unlock the same way", "yellow", size=16)
 
 
@@ -322,37 +331,55 @@ with S.frame("smart", "Smart Focus engine", 2260, 1060,
 
 
 # ------------------------------------------------------------------------ 9
-with S.frame("goal", "Goal & intent capture", 1960, 900,
-             "Conversational, like an agent harness: ask only when needed."):
-    S.box("start", 60, 270, 260, 90, "Session starts", "gray", shape="ellipse")
-    S.box("manual", 410, 245, 260, 140, "Started\nmanually?", "blue", shape="diamond")
-    S.box("ask", 770, 130, 340, 110, "Side panel asks\n\"What are you\nworking on?\"", "pink", size=16)
-    S.box("vague", 1200, 115, 260, 140, "Goal vague?", "blue", shape="diamond")
-    S.box("follow", 1560, 140, 330, 90, "One follow-up question", "pink", size=16)
-    S.box("infer", 770, 420, 340, 110, "Infer goal from recent\ntopics + profile;\nshow it in side panel", "yellow", size=16)
-    S.box("goal", 1200, 430, 300, 110, "Current goal\ntext + embedding", "violet")
-    S.box("edit", 1580, 440, 300, 90, "User edits goal\nanytime", "pink", size=16)
-    S.box("shift", 770, 700, 340, 100, "Topic-shift detector\n(embeddings)", "yellow", size=16)
-    S.box("confirm", 1200, 700, 300, 100, "\"Switching to\nchemistry?\"", "pink", size=16)
-    S.box("pipe", 1580, 700, 300, 80, "→ verdict pipeline", "gray")
+with S.frame("goal", "Goal model & intent capture", 2340, 1440,
+             "General rules always on; saved goals + an optional session goal on top. Every new goal is checked so it can't be the distraction itself."):
+    S.box("start", 60, 200, 240, 90, "Session starts", "gray", shape="ellipse")
+    S.box("manual", 380, 180, 240, 130, "Started\nmanually?", "blue", shape="diamond")
+    S.box("ask", 720, 190, 320, 110, "Side panel asks\n\"What are you\nworking on?\"", "pink", size=16)
+    S.box("vague", 1130, 180, 240, 130, "Goal vague?", "blue", shape="diamond")
+    S.box("follow", 1470, 200, 300, 90, "One follow-up question", "pink", size=16)
+    S.box("bedit", 1900, 200, 300, 110, "Block screen:\nEdit goal\n(frame 6)", "pink", size=16)
+
+    S.box("infer", 720, 440, 320, 110, "Infer goal from recent\ntopics + saved goals\n(Smart / Continuous)", "yellow", size=16)
+    S.box("keep", 1120, 440, 260, 150, "Add to my goals\nor just this\nsession?", "pink", shape="diamond", size=15)
+    S.box("gchk", 1500, 440, 260, 150, "LLM goal check:\nreal task?", "yellow", shape="diamond", size=15)
+    S.box("saved", 1900, 460, 320, 110, "Saved goal list\nfree: up to 5 · premium: unlimited\ntext + embedding", "violet", size=16)
+    S.box("rej", 1500, 720, 260, 90, "Rejected:\nask for a real task", "red", size=16)
+    S.box("sess", 1120, 720, 260, 100, "Session goal\n(temporary)", "violet", size=16)
+
+    S.box("a2", 560, 960, 380, 100, "No session goal → active:\nsaved list (or inferred)\n+ general goal", "violet", size=16)
+    S.box("a1", 1100, 960, 380, 100, "Session goal set → active:\nsession goal only\n+ general goal", "violet", size=16)
+    S.box("gen", 1700, 1180, 400, 110, "General goal (always on)\njudge rules + safe categories\ndocs · email · search · tools", "gray", size=16)
+    S.box("match", 1060, 1180, 460, 110, "Compare page with EACH active goal\nseparately → highest score wins\n→ verdict pipeline", "yellow", size=16)
+
     S.arrow("start", "manual")
     S.arrow("manual", "ask", "yes")
-    S.arrow("manual", "infer", "no (Smart /\nContinuous)")
+    S.arrow("manual", "infer", "no")
     S.arrow("ask", "vague")
     S.arrow("vague", "follow", "yes")
-    S.arrow("follow", "vague", "", via=[(1725, 280), (1330, 280)])
-    S.arrow("vague", "goal", "no")
-    S.arrow("infer", "goal")
-    S.arrow("edit", "goal")
-    S.arrow("goal", "shift", "watch")
-    S.arrow("shift", "confirm")
-    S.arrow("confirm", "goal", "yes → update")
-    S.arrow("goal", "pipe", "used by")
+    S.arrow("follow", "vague", "", via=[(1620, 150), (1250, 150)])
+    S.arrow("vague", "keep", "no")
+    S.arrow("keep", "gchk", "add")
+    S.arrow("keep", "sess", "this session")
+    S.arrow("bedit", "gchk", "")
+    S.arrow("gchk", "saved", "yes")
+    S.arrow("gchk", "rej", "no")
+    S.arrow("infer", "a2", "")
+    S.arrow("saved", "a2", "", via=[(2060, 880), (750, 880)])
+    S.arrow("sess", "a1", "")
+    S.arrow("a2", "match", "")
+    S.arrow("a1", "match", "")
+    S.arrow("gen", "match", "")
+    S.note("gnotes", 60, 1160, 900, 220,
+           "Notes\n• Goal text is untrusted (prompt injection): quoted, max ~200 chars\n"
+           "• No LLM (basic mode): a new goal is saved as pending, checked later\n"
+           "• Topic shift: \"Switching to chemistry?\" updates the session goal\n"
+           "• Each goal is embedded once and the vector is reused", "gray", size=16)
 
 
 # ----------------------------------------------------------------------- 10
-with S.frame("db", "Database schema (Postgres)", 1460, 1280,
-             "Raw history 30 days; aggregates forever; content facts shared by all users."):
+with S.frame("db", "Database schema (Postgres)", 1460, 1560,
+             "Decisions kept with user ID (dashboard history, personalisation); aggregates forever; content facts shared."):
     S.table("users", 60, 180, "users", ["id           uuid  PK", "email        text  UQ", "auth_provider text",
                                          "plan         text", "profile      jsonb", "focus_hours  jsonb",
                                          "created_at   ts"])
@@ -361,22 +388,30 @@ with S.frame("db", "Database schema (Postgres)", 1460, 1280,
                                               "heatmap      int[24]", "top_sites    jsonb",
                                               "convince_wins int"])
     S.table("sess", 500, 180, "sessions", ["id         uuid PK", "user_id    uuid FK", "mode       text",
-                                           "goal       text", "started_at ts", "ended_at   ts"])
-    S.table("verd", 500, 580, "verdicts", ["id         uuid PK", "user_id    uuid FK", "session_id uuid FK",
-                                           "content_id uuid FK", "verdict    text", "reason     text",
-                                           "source     text", "page_vec   vector (later)",
-                                           "goal_vec   vector (later)", "created_at ts"])
-    S.table("appl", 500, 1060, "appeals", ["id         uuid PK", "verdict_id uuid FK", "kind  text  won bool"])
+                                           "goal_id    uuid FK", "started_at ts", "ended_at   ts"])
+    S.table("verd", 500, 580, "verdicts",
+            ["id           uuid PK", "user_id      uuid FK", "session_id   uuid FK",
+             "content_id   uuid FK", "goal_id      uuid FK", "decision     text",
+             "reason       text", "source       text", "weight       real",
+             "confirmed    bool", "user_reason  text NULL", "page_vec     vector(384)",
+             "goal_vec     vector(384)", "combined_vec vector(768) HNSW", "visit_count  int",
+             "first_seen   ts", "last_seen    ts"])
+    S.table("appl", 500, 1340, "appeals", ["id         uuid PK", "verdict_id uuid FK", "kind  text  won bool"])
     S.table("facts", 940, 620, "content_facts", ["id          uuid PK", "content_key text UQ",
-                                                 "description text", "embedding   bytea",
+                                                 "description text", "page_vec    vector(384)",
                                                  "created_at  ts"], color="yellow")
-    S.note("ret", 940, 180, 460, 260,
-           "Retention\n• verdicts, appeals: deleted after 30 days\n  (so basic mode remembers 30 days)\n• daily_stats: kept forever\n"
-           "• content_facts: shared, not per user\n• FAISS index is rebuilt from\n  content_facts.embedding", "yellow", size=16)
+    S.table("goals", 940, 1000, "goals", ["id         uuid PK", "user_id    uuid FK", "text       text",
+                                          "vec        vector(384)", "kind  saved|session|inferred",
+                                          "status active|pending|rejected", "created_at ts"])
+    S.note("ret", 940, 180, 460, 330,
+           "Retention\n• verdicts: kept with user ID (dashboard\n  history, personalisation); delete-my-data\n  removes every row of a user\n"
+           "• daily_stats: kept forever\n• content_facts: shared, not per user\n"
+           "• FAISS index rebuilt from content_facts.page_vec\n• verdicts.combined_vec: pgvector search\n• verdicts: 1 row per user + page + goal", "yellow", size=16)
     S.arrow("sess", "users", "user_id")
     S.arrow("verd", "users", "user_id")
     S.arrow("verd", "sess", "session_id")
     S.arrow("verd", "facts", "content_id")
+    S.arrow("verd", "goals", "goal_id")
     S.arrow("appl", "verd", "verdict_id")
     S.arrow("daily", "users", "user_id")
 
@@ -537,7 +572,7 @@ with S.frame("pyflow", "Python AI service — page to verdict", 2320, 2980,
 
 
 # ----------------------------------------------------------------------- 15
-with S.frame("basic", "Basic mode — judging without an LLM", 2200, 1300,
+with S.frame("basic", "Basic mode — judging without an LLM", 2200, 1340,
              "Runs when a free user's daily AI cap is used up, or when every LLM provider is down. Cost ≈ 0: local embeddings only."):
     S.box("in1", 80, 200, 300, 90, "Free cap used up\n(Go sends use_llm = false)", "cyan", shape="ellipse", size=15)
     S.box("in2", 80, 420, 300, 90, "All LLM providers\ndown", "red", shape="ellipse", size=15)
@@ -545,9 +580,12 @@ with S.frame("basic", "Basic mode — judging without an LLM", 2200, 1300,
     S.box("m", 560, 540, 300, 160, "2. Embedding match\nvs goal\n(basic thresholds)", "violet", shape="diamond", size=15)
     S.box("ok", 80, 580, 240, 80, "ALLOW", "green", size=18)
     S.box("bl", 1060, 580, 240, 80, "BLOCK", "red", size=18)
-    S.box("nn", 560, 820, 300, 170, "3. Closest past case?\nsame user · similar page\n+ similar goal ≥ 0.9\n(later)", "blue", shape="diamond", style="dashed", size=14)
-    S.box("copy", 1060, 860, 280, 90, "Copy its verdict\nsource = nearest\n(later)", "gray", style="dashed", size=15)
-    S.box("re", 80, 870, 280, 90, "4. Allow ·\nrecheck later", "green", size=16)
+    S.box("nn", 540, 800, 340, 190, "3. Closest past cases?\nALL users · page + goal\nboth ≥ 0.9 · ≥ 2 people\n(pgvector, later)", "blue", shape="diamond", style="dashed", size=14)
+    S.box("copy", 1060, 840, 320, 110, "Copy weighted vote\nconfirmed 3 · LLM 2 · emb 1.5\nbasic 0.5 · source = nearest", "gray", style="dashed", size=15)
+    S.box("re", 40, 850, 360, 110, "4. Allow + floating prompt\n(15 s, side of page)\n\"Is this a distraction?\"", "pink", size=15)
+    S.box("pyes", 20, 1090, 240, 90, "Yes → block\nconfirmed (w 3)", "red", size=15)
+    S.box("pno", 300, 1090, 260, 110, "No → allow\nconfirmed (w 3)\n+ optional reason", "green", size=15)
+    S.box("pign", 600, 1090, 240, 90, "Ignored → allow\nnothing saved", "gray", size=15)
 
     S.arrow("in1", "ex", "")
     S.arrow("in2", "ex", "")
@@ -556,16 +594,20 @@ with S.frame("basic", "Basic mode — judging without an LLM", 2200, 1300,
     S.arrow("m", "bl", "unrelated")
     S.arrow("m", "nn", "unclear")
     S.arrow("nn", "copy", "yes", style="dashed")
-    S.arrow("nn", "re", "no (or not built yet)")
+    S.arrow("nn", "re", "too little evidence")
+    S.arrow("re", "pyes", "")
+    S.arrow("re", "pno", "")
+    S.arrow("re", "pign", "")
 
     S.note("why", 1460, 180, 680, 300,
            "Why basic mode\n• Protection never stops: no uninstalls\n  or \"stopped working\" reviews\n"
            "• Free users still see the premium offer\n• Premium = unlimited AI checks, so it\n  only reaches basic mode in outages", "yellow")
-    S.note("rules", 1460, 540, 680, 360,
-           "Rules\n• No LLM calls; source = extracted\n• May need its own thresholds (eval)\n"
-           "• Closest case uses only THIS user's\n  verdicts: verdicts depend on the goal\n"
-           "• Prefer LLM-judged + corrected cases\n• Open: extracted summary first for\n  everyone? Decided by the eval", "gray")
-    S.note("lev", 1460, 960, 680, 260,
+    S.note("rules", 1460, 540, 680, 400,
+           "Closest-case rules\n• One search over ALL users: closest wins\n"
+           "• Combined vector = extracted page + goal\n• Cross-user copy needs ≥ 2 people\n"
+           "• No fading by age; repeats = 1 row + count\n• Copied (nearest) decisions never vote\n"
+           "• Floating prompt: no daily cap\n• Spec: goals-and-basic-mode-nearest-case", "gray")
+    S.note("lev", 1460, 1000, 680, 260,
            "Upgrade levers (proposed)\n• Popup: \"Basic mode: less accurate\n  until midnight\"\n"
            "• Upgrade prompt when basic mode\n  allows an unclear page\n• Track retention · upgrades · appeals", "gray")
 

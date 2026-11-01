@@ -15,15 +15,19 @@ One Excalidraw drawing sheet with every AutopilotFocus schematic, one frame per 
 | 3 | Backend services |
 | 4 | Verdict request — sequence |
 | 5 | AI agent — verdict pipeline |
-| 6 | Block screen — appeal & Convince Me |
+| 6 | Block screen — appeal, goal edit & Convince Me |
 | 7 | Focus modes & session state machine |
 | 8 | Smart Focus engine |
-| 9 | Goal & intent capture |
+| 9 | Goal model & intent capture |
 | 10 | Database schema (Postgres) |
 | 11 | Privacy & data lifecycle |
 | 12 | Deployment — one VPS |
 | 13 | Roadmap & phases |
 | 14 | Python AI service — page to verdict |
+| 15 | Basic mode — judging without an LLM |
+
+Frames 6, 9, 10 and 15 follow [goals-and-basic-mode-nearest-case-spec.md](../goals-and-basic-mode-nearest-case-spec.md).
+A parked version with the music feature lives in [future/music/](future/music/).
 
 Dashed boxes are components the spec still marks as *Proposed*, or ones planned for later phases.
 Anything you draw by hand on the board is kept when the board is regenerated. Changes to the generated
