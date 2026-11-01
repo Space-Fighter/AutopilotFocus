@@ -18,9 +18,6 @@ from .schemas import Goal, PageData, Verdict
 class ClassifyRequest(BaseModel):
     page: PageData
     goal: Goal
-    # True = normal mode. False = basic mode: judge with NO LLM at all (spec §5.9).
-    # The Go API sends False when a free user's daily AI cap is used up.
-    use_llm: bool = True
 
 
 @asynccontextmanager
@@ -44,4 +41,4 @@ def health() -> dict:
 @app.post("/v1/classify")
 def classify_endpoint(req: ClassifyRequest) -> Verdict:
     s = app.state
-    return classify(req.page, req.goal, s.llm, s.embedder, s.settings, use_llm=req.use_llm)
+    return classify(req.page, req.goal, s.llm, s.embedder, s.settings)

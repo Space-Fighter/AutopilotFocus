@@ -1,9 +1,6 @@
 """Step 0 accuracy test: run the pipeline over labelled (page, goal) pairs and report results.
 
-Run from ai-service/:  uv run python eval/run_eval.py            (normal mode)
-                       uv run python eval/run_eval.py --basic    (basic mode)
-Basic mode = judging with NO LLM at all, as when a free user's daily AI cap is used up
-or every LLM provider is down (spec §5.9). Compare the two runs to see what it costs in accuracy.
+Run from ai-service/:  uv run python eval/run_eval.py
 Add rows to eval/dataset.jsonl. Aim for 50-100 real pages, half "allow" and half "block".
 """
 
@@ -23,7 +20,6 @@ DATASET = Path(__file__).parent / "dataset.jsonl"
 
 
 def main() -> int:
-    use_llm = "--basic" not in sys.argv
     settings = get_settings()
     embedder = Embedder(settings.embedding_model)
     llm = ProviderChain(load_providers(settings.providers_file), settings.llm_timeout_s)
@@ -37,7 +33,7 @@ def main() -> int:
         page = PageData(**row["page"])
         goal = Goal(text=row["goal"], profile=row.get("profile", ""))
         start = time.perf_counter()
-        verdict = classify(page, goal, llm, embedder, settings, use_llm=use_llm)
+        verdict = classify(page, goal, llm, embedder, settings)
         latencies.append(time.perf_counter() - start)
 
         ok = verdict.decision == row["expected"]
@@ -52,7 +48,6 @@ def main() -> int:
 
     n = len(rows)
     print()
-    print(f"mode          {'normal' if use_llm else 'basic (no LLM)'}")
     print(f"accuracy      {correct}/{n} = {correct / n:.0%}")
     print(f"decided by    {dict(by_source)}  (llm = cases that cost an LLM judge call)")
     print(f"latency       avg {sum(latencies) / n:.2f}s, max {max(latencies):.2f}s")

@@ -1,0 +1,314 @@
+diff --git b/ai-service/eval/run_eval.py a/ai-service/eval/run_eval.py
+index e3d2015..38f33ee 100644
+--- b/ai-service/eval/run_eval.py
++++ a/ai-service/eval/run_eval.py
+@@ -1,6 +1,9 @@
+ """Step 0 accuracy test: run the pipeline over labelled (page, goal) pairs and report results.
+ 
+-Run from ai-service/:  uv run python eval/run_eval.py
++Run from ai-service/:  uv run python eval/run_eval.py            (normal mode)
++                       uv run python eval/run_eval.py --basic    (basic mode)
++Basic mode = judging with NO LLM at all, as when a free user's daily AI cap is used up
++or every LLM provider is down (spec §5.9). Compare the two runs to see what it costs in accuracy.
+ Add rows to eval/dataset.jsonl. Aim for 50-100 real pages, half "allow" and half "block".
+ """
+ 
+@@ -20,6 +23,7 @@ DATASET = Path(__file__).parent / "dataset.jsonl"
+ 
+ 
+ def main() -> int:
++    use_llm = "--basic" not in sys.argv
+     settings = get_settings()
+     embedder = Embedder(settings.embedding_model)
+     llm = ProviderChain(load_providers(settings.providers_file), settings.llm_timeout_s)
+@@ -33,7 +37,7 @@ def main() -> int:
+         page = PageData(**row["page"])
+         goal = Goal(text=row["goal"], profile=row.get("profile", ""))
+         start = time.perf_counter()
+-        verdict = classify(page, goal, llm, embedder, settings)
++        verdict = classify(page, goal, llm, embedder, settings, use_llm=use_llm)
+         latencies.append(time.perf_counter() - start)
+ 
+         ok = verdict.decision == row["expected"]
+@@ -48,6 +52,7 @@ def main() -> int:
+ 
+     n = len(rows)
+     print()
++    print(f"mode          {'normal' if use_llm else 'basic (no LLM)'}")
+     print(f"accuracy      {correct}/{n} = {correct / n:.0%}")
+     print(f"decided by    {dict(by_source)}  (llm = cases that cost an LLM judge call)")
+     print(f"latency       avg {sum(latencies) / n:.2f}s, max {max(latencies):.2f}s")
+diff --git b/ai-service/src/ai_service/api.py a/ai-service/src/ai_service/api.py
+index 02fd49c..1fa71a8 100644
+--- b/ai-service/src/ai_service/api.py
++++ a/ai-service/src/ai_service/api.py
+@@ -18,6 +18,9 @@ from .schemas import Goal, PageData, Verdict
+ class ClassifyRequest(BaseModel):
+     page: PageData
+     goal: Goal
++    # True = normal mode. False = basic mode: judge with NO LLM at all (spec §5.9).
++    # The Go API sends False when a free user's daily AI cap is used up.
++    use_llm: bool = True
+ 
+ 
+ @asynccontextmanager
+@@ -41,4 +44,4 @@ def health() -> dict:
+ @app.post("/v1/classify")
+ def classify_endpoint(req: ClassifyRequest) -> Verdict:
+     s = app.state
+-    return classify(req.page, req.goal, s.llm, s.embedder, s.settings)
++    return classify(req.page, req.goal, s.llm, s.embedder, s.settings, use_llm=req.use_llm)
+diff --git b/ai-service/src/ai_service/config.py a/ai-service/src/ai_service/config.py
+index 0354099..169c5a3 100644
+--- b/ai-service/src/ai_service/config.py
++++ a/ai-service/src/ai_service/config.py
+@@ -18,6 +18,12 @@ class Settings(BaseSettings):
+     # anything between is "unclear" and goes to the LLM judge.
+     related_threshold: float = 0.75
+     unrelated_threshold: float = 0.55
++    # Thresholds for BASIC MODE = judging with no LLM at all (free cap used up, or every
++    # LLM provider down; spec §5.9). Its summary is built from the page's own title/meta/
++    # headings, which can score differently from an LLM summary, so it gets its own pair.
++    # Same values as normal mode for now; the eval decides whether they need to move.
++    basic_related_threshold: float = 0.75
++    basic_unrelated_threshold: float = 0.55
+     llm_timeout_s: float = 20.0
+     providers_file: Path = SERVICE_ROOT / "providers.toml"
+ 
+diff --git b/ai-service/src/ai_service/describer.py a/ai-service/src/ai_service/describer.py
+index a39d4eb..9218bb6 100644
+--- b/ai-service/src/ai_service/describer.py
++++ a/ai-service/src/ai_service/describer.py
+@@ -1,15 +1,25 @@
+ """Turns a page into ContentFacts: a short description of what the page IS.
+ 
+-describe_content(page, llm) asks the LLM for a clean summary (spec §5.4, step 5).
++There are two ways to make ContentFacts. pipeline.py picks which one runs:
++
++  describe_content(page, llm)  Normal mode. Asks the LLM for a clean summary. (spec §5.4, step 5)
++  extracted_facts(page)        Basic mode = judging with NO LLM at all. Glues together the
++                               page's own title, meta description and headings. Used when a
++                               free user's daily AI cap is used up, or when every LLM provider
++                               is down. Not the same as "free tier". (spec §5.9)
+ 
+ This file only produces TEXT. It never calls the embedding model: matcher.py does that next.
+ 
+-Board: MVP frame 4 "Describer (LLM)"; full board frame 3 "Content describer".
++Board: frame 3 "Content describer (LLM -> short facts)"; frame 15 step 1 "Extracted summary".
+ """
+ 
+ from .llm import ProviderChain
+ from .schemas import ContentFacts, PageData
+ 
++# ---------------------------------------------------------------------------
++# Normal mode: the LLM writes the description
++# ---------------------------------------------------------------------------
++
+ # The system prompt: the fixed instructions sent with every describe call.
+ # - It says what the page IS, never whether it is a distraction. That keeps the
+ #   facts free of any user's goal, so they can be shared across users (spec §5.5).
+@@ -64,10 +74,10 @@ def build_describe_prompt(page: PageData) -> str:
+ 
+ 
+ def describe_content(page: PageData, llm: ProviderChain) -> ContentFacts:
+-    """Ask the LLM what the page is, and return its answer as ContentFacts.
++    """Normal mode: ask the LLM what the page is, and return its answer as ContentFacts.
+ 
+-    Can raise two errors, which classify() in pipeline.py catches (it then allows
+-    the page and rechecks it later):
++    Can raise two errors, which classify() in pipeline.py catches and handles
++    by switching to basic mode:
+       - AllProvidersExhausted: no LLM provider answered (quota, outage).
+       - pydantic.ValidationError: an LLM answered, but its JSON had the wrong shape.
+     """
+@@ -75,3 +85,37 @@ def describe_content(page: PageData, llm: ProviderChain) -> ContentFacts:
+     data = llm.complete_json(DESCRIBE_SYSTEM_PROMPT, build_describe_prompt(page))
+     # Check the dict has summary / topics / kind with the right types before trusting it.
+     return ContentFacts.model_validate(data)
++
++
++# ---------------------------------------------------------------------------
++# Basic mode: no LLM, build the description from the page's own fields
++# ---------------------------------------------------------------------------
++
++def extracted_facts(page: PageData) -> ContentFacts:
++    """Basic mode (spec §5.9): build ContentFacts from the page's own fields. No LLM call.
++
++    Example (a YouTube page):
++      summary = "I Survived 100 Days in Hardcore Minecraft. GamerGuy. Gaming"
++      topics  = ["minecraft", "100 days"]
++
++    Lower quality than the LLM summary (clickbait titles, empty meta descriptions),
++    but free and instant. pipeline.basic_classify() then embeds it and compares it
++    with the goal, exactly like normal mode.
++    """
++    # The text pieces to join: title, meta description, the first 3 headings.
++    parts = [page.title, page.meta_description, *page.headings[:3]]
++    topics: list[str] = []
++
++    # On YouTube, the channel and category help a lot, and the tags act as topics.
++    if page.youtube:
++        parts += [page.youtube.channel, page.youtube.category]
++        topics = [t.lower() for t in page.youtube.tags[:4]]
++
++    # Drop empty pieces and trailing periods, so joining with ". " never gives "..".
++    cleaned = [p.strip().rstrip(".") for p in parts if p and p.strip()]
++    summary = ". ".join(c for c in cleaned if c)
++
++    # Without an LLM we can't tell the kind, so it's always "other". The matcher
++    # doesn't use kind, so this doesn't affect the verdict.
++    # If the page had no usable text at all, fall back to its URL as the summary.
++    return ContentFacts(summary=summary or page.url, topics=topics, kind="other")
+diff --git b/ai-service/src/ai_service/matcher.py a/ai-service/src/ai_service/matcher.py
+index 3ee2f30..dd657bb 100644
+--- b/ai-service/src/ai_service/matcher.py
++++ a/ai-service/src/ai_service/matcher.py
+@@ -23,14 +23,27 @@ def goal_text(goal: Goal) -> str:
+     return goal.text
+ 
+ 
+-def match(facts: ContentFacts, goal: Goal, embedder: Embedder, settings: Settings) -> MatchResult:
+-    """Score facts against the goal and put the score in a band: related / unrelated / unclear."""
++def match(
++    facts: ContentFacts, goal: Goal, embedder: Embedder, settings: Settings, basic: bool = False
++) -> MatchResult:
++    """Score facts against the goal and put the score in a band: related / unrelated / unclear.
++
++    The embedding comparison is identical in both modes. `basic` only picks WHICH
++    PAIR OF THRESHOLDS to compare the score against:
++      basic=False  the summary was written by the LLM (normal mode)
++      basic=True   the summary was built from the page's own title/meta/headings with
++                   no LLM (basic mode, spec §5.9). Those texts can score differently,
++                   so they get their own thresholds in config.py.
++    `basic` says nothing about free vs premium, and nothing about the LLM judge.
++    """
+     # Step 0 shortcut: the goal is re-embedded every call. Later, cache its vector per session.
+     similarity = cosine(embedder.embed(facts_text(facts)), embedder.embed(goal_text(goal)))
+ 
+-    if similarity >= settings.related_threshold:
++    related = settings.basic_related_threshold if basic else settings.related_threshold
++    unrelated = settings.basic_unrelated_threshold if basic else settings.unrelated_threshold
++    if similarity >= related:
+         band = "related"
+-    elif similarity <= settings.unrelated_threshold:
++    elif similarity <= unrelated:
+         band = "unrelated"
+     else:
+         band = "unclear"  # only this band costs an LLM judge call
+diff --git b/ai-service/src/ai_service/pipeline.py a/ai-service/src/ai_service/pipeline.py
+index 982b30f..6aae4e5 100644
+--- b/ai-service/src/ai_service/pipeline.py
++++ a/ai-service/src/ai_service/pipeline.py
+@@ -1,12 +1,18 @@
+ """Ties the steps together: describe -> match -> (judge if unclear) -> verdict.
+ 
+-  LLM summary -> embedding match -> related: allow / unrelated: block / unclear: LLM judge
++Two modes. Both use the embedding model to compare the page with the goal:
+ 
+-MVP assumes an LLM is available. If every provider fails, the page is allowed and
+-rechecked later. (A no-LLM "basic mode" is designed and parked: board frame 15,
+-.plans/architecture/future/basic-mode/.)
++  NORMAL MODE  LLM summary  -> embedding match -> unclear? ask the LLM judge
++  BASIC MODE   page's own title/meta/headings -> embedding match -> unclear? allow
++               (later: copy the closest past case, spec §5.9 step 3)
+ 
+-Board: MVP frame 4; full board frame 5. No caches yet (no Postgres or FAISS).
++What "basic" means: judging a page with NO LLM AT ALL. It is not "the free tier"
++and not "embeddings instead of the judge". It runs in two situations:
++  1. A free user's daily AI cap is used up: the Go API sends use_llm=False.
++  2. Every LLM provider is down: describe_content fails, so classify switches to it.
++Premium users only reach it in case 2.
++
++Board: frame 5 (normal mode), frame 15 (basic mode). No caches yet (no Postgres or FAISS).
+ """
+ 
+ import logging
+@@ -14,7 +20,7 @@ import logging
+ from pydantic import ValidationError
+ 
+ from .config import Settings
+-from .describer import describe_content
++from .describer import describe_content, extracted_facts
+ from .embedder import Embedder
+ from .judge import judge
+ from .llm import AllProvidersExhausted, ProviderChain
+@@ -23,7 +29,7 @@ from .schemas import Goal, PageData, Verdict
+ 
+ log = logging.getLogger(__name__)
+ 
+-# Spec §5.7, last step: when the AI can't answer, allow the page and recheck later.
++# Spec §5.7, last step: when nothing can decide, allow the page and recheck later.
+ RECHECK = Verdict(
+     decision="allow",
+     reason="Couldn't check this page right now. It will be rechecked.",
+@@ -37,13 +43,23 @@ def classify(
+     llm: ProviderChain,
+     embedder: Embedder,
+     settings: Settings,
++    use_llm: bool = True,
+ ) -> Verdict:
+-    """Return allow/block for this page against this goal."""
++    """Return allow/block for this page against this goal.
++
++    use_llm=True  -> normal mode (LLM summary, LLM judge for unclear cases).
++    use_llm=False -> basic mode, no LLM at all. The Go API sends False when a free
++                     user's daily AI cap is used up. Normal mode also falls back to
++                     basic mode by itself if the LLM describer fails.
++    """
++    if not use_llm:
++        return basic_classify(page, goal, embedder, settings)
++
+     try:
+         facts = describe_content(page, llm)
+     except (AllProvidersExhausted, ValidationError) as e:
+-        log.warning("Describer failed, allowing page: %s", e)
+-        return RECHECK
++        log.warning("Describer failed, using basic mode: %s", e)
++        return basic_classify(page, goal, embedder, settings)
+ 
+     # Cheap first pass: local embeddings, no LLM call.
+     result = match(facts, goal, embedder, settings)
+@@ -60,3 +76,24 @@ def classify(
+     except (AllProvidersExhausted, ValidationError) as e:
+         log.warning("Judge failed, allowing page: %s", e)
+         return RECHECK
++
++
++def basic_classify(page: PageData, goal: Goal, embedder: Embedder, settings: Settings) -> Verdict:
++    """Basic mode (spec §5.9): judge a page with NO LLM call at all.
++
++    The summary comes from the page's own fields (extracted_facts), the embedding
++    match is the same as normal mode, and there is no LLM judge for unclear cases.
++    """
++    facts = extracted_facts(page)
++    # basic=True: "this summary was made without an LLM", so use the basic-mode thresholds.
++    result = match(facts, goal, embedder, settings, basic=True)
++    if result.band == "related":
++        return Verdict(decision="allow", reason=f"Fits your goal: {facts.summary}.",
++                       source="extracted", similarity=result.similarity)
++    if result.band == "unrelated":
++        return Verdict(decision="block", reason=f"Not part of your goal: {facts.summary}.",
++                       source="extracted", similarity=result.similarity)
++
++    # Step 3, closest past case (same user, similar page + goal), needs stored verdict
++    # vectors in Postgres. Until that store exists, unclear pages are allowed.
++    return RECHECK.model_copy(update={"similarity": result.similarity})
+diff --git b/ai-service/src/ai_service/schemas.py a/ai-service/src/ai_service/schemas.py
+index 0ed901e..aa0af8c 100644
+--- b/ai-service/src/ai_service/schemas.py
++++ a/ai-service/src/ai_service/schemas.py
+@@ -60,8 +60,10 @@ class Verdict(BaseModel):
+     decision: Literal["allow", "block"]
+     reason: str
+     # Which step made the call:
+-    #   embedding  decided by the embedding match (related / unrelated)
+-    #   llm        unclear score, decided by the LLM judge
+-    #   fallback   no LLM provider answered, so the page is allowed and rechecked later
+-    source: Literal["embedding", "llm", "fallback"]
++    #   embedding  normal mode: LLM summary, decided by the embedding match
++    #   llm        normal mode: unclear score, decided by the LLM judge
++    #   extracted  basic mode (no LLM at all): page's own fields, decided by the embedding match
++    #   nearest    basic mode: copied from the user's closest past case (later)
++    #   fallback   nothing could decide, so the page is allowed and rechecked later
++    source: Literal["embedding", "llm", "extracted", "nearest", "fallback"]
+     similarity: float | None = None  # None when no goal match ran (e.g. fallback)

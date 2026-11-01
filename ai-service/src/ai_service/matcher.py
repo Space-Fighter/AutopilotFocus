@@ -23,27 +23,14 @@ def goal_text(goal: Goal) -> str:
     return goal.text
 
 
-def match(
-    facts: ContentFacts, goal: Goal, embedder: Embedder, settings: Settings, basic: bool = False
-) -> MatchResult:
-    """Score facts against the goal and put the score in a band: related / unrelated / unclear.
-
-    The embedding comparison is identical in both modes. `basic` only picks WHICH
-    PAIR OF THRESHOLDS to compare the score against:
-      basic=False  the summary was written by the LLM (normal mode)
-      basic=True   the summary was built from the page's own title/meta/headings with
-                   no LLM (basic mode, spec §5.9). Those texts can score differently,
-                   so they get their own thresholds in config.py.
-    `basic` says nothing about free vs premium, and nothing about the LLM judge.
-    """
+def match(facts: ContentFacts, goal: Goal, embedder: Embedder, settings: Settings) -> MatchResult:
+    """Score facts against the goal and put the score in a band: related / unrelated / unclear."""
     # Step 0 shortcut: the goal is re-embedded every call. Later, cache its vector per session.
     similarity = cosine(embedder.embed(facts_text(facts)), embedder.embed(goal_text(goal)))
 
-    related = settings.basic_related_threshold if basic else settings.related_threshold
-    unrelated = settings.basic_unrelated_threshold if basic else settings.unrelated_threshold
-    if similarity >= related:
+    if similarity >= settings.related_threshold:
         band = "related"
-    elif similarity <= unrelated:
+    elif similarity <= settings.unrelated_threshold:
         band = "unrelated"
     else:
         band = "unclear"  # only this band costs an LLM judge call
