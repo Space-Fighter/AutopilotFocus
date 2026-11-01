@@ -26,6 +26,13 @@ cp .env.example .env   # then add at least one API key
 | 4 | `describer.py` | prompt, `build_describe_prompt`, `describe_content` | Prompting for structured output |
 | 5 | `judge.py` | prompt, `judge` | LLM as a judge |
 | 6 | `pipeline.py` | `classify` | Workflow: code decides the steps |
+| 7 | `page_identity.py` | `content_key` | Exact identity of a page (cache key) |
+| 8 | `summary_index.py` | `SummaryIndex.add`, `search` | FAISS: vector search with your own IDs |
+| 9 | `facts_cache.py` | `get_facts` | Cache-aside: exact key → FAISS → LLM → save |
+| 10 | `matcher.py` | `GoalVectors.get` | Memoizing: embed a goal once |
+
+Needs Postgres for the cache: from the repo root, `docker compose up -d`, then run the
+migrations (see `db/README.md`).
 
 ## Run
 

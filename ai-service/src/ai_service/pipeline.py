@@ -1,25 +1,25 @@
-"""Ties the steps together: describe -> match -> (judge if unclear) -> verdict.
+"""Ties the steps together: facts (cache or LLM) -> match -> (judge if unclear) -> verdict.
 
-  LLM summary -> embedding match -> related: allow / unrelated: block / unclear: LLM judge
+  summary (cache: exact key -> FAISS -> else LLM) -> embedding match vs goal
+      -> related: allow / unrelated: block / unclear: LLM judge
 
 MVP assumes an LLM is available. If every provider fails, the page is allowed and
 rechecked later. (A no-LLM "basic mode" is designed and parked: board frame 15,
 .plans/architecture/future/basic-mode/.)
 
-Board: MVP frame 4; full board frame 5. No caches yet (no Postgres or FAISS).
+Board: MVP frame 4; full board frames 5 and 14.
 """
 
 import logging
 
 from pydantic import ValidationError
 
-from .config import Settings
-from .describer import describe_content
-from .embedder import Embedder
+from .facts_cache import get_facts
 from .judge import judge
-from .llm import AllProvidersExhausted, ProviderChain
+from .llm import AllProvidersExhausted
 from .matcher import match
 from .schemas import Goal, PageData, Verdict
+from .services import Services
 
 log = logging.getLogger(__name__)
 
@@ -31,22 +31,16 @@ RECHECK = Verdict(
 )
 
 
-def classify(
-    page: PageData,
-    goal: Goal,
-    llm: ProviderChain,
-    embedder: Embedder,
-    settings: Settings,
-) -> Verdict:
+def classify(page: PageData, goal: Goal, s: Services) -> Verdict:
     """Return allow/block for this page against this goal."""
     try:
-        facts = describe_content(page, llm)
+        facts, facts_vec = get_facts(page, s.llm, s.embedder, s.index, s.engine, s.settings)
     except (AllProvidersExhausted, ValidationError) as e:
         log.warning("Describer failed, allowing page: %s", e)
         return RECHECK
 
     # Cheap first pass: local embeddings, no LLM call.
-    result = match(facts, goal, embedder, settings)
+    result = match(facts_vec, s.goal_vectors.get(goal), s.settings)
     if result.band == "related":
         return Verdict(decision="allow", reason=f"Fits your goal: {facts.summary}.",
                        source="embedding", similarity=result.similarity)
@@ -56,7 +50,7 @@ def classify(
 
     # Only the unclear band pays for an LLM judge call.
     try:
-        return judge(facts, goal, result.similarity, llm)
+        return judge(facts, goal, result.similarity, s.llm)
     except (AllProvidersExhausted, ValidationError) as e:
         log.warning("Judge failed, allowing page: %s", e)
         return RECHECK

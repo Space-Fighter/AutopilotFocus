@@ -12,10 +12,17 @@ dependencies = [
     "python-dotenv>=1.0",
     "fastapi>=0.110",
     "uvicorn[standard]>=0.29",
+    "sqlmodel>=0.0.48",
+    "psycopg[binary]>=3.3.6",
+    "pgvector>=0.5.1",
+    "faiss-cpu>=1.15.1",
 ]
 
 [dependency-groups]
-dev = ["pytest>=8"]
+dev = [
+    "pytest>=8",
+    "sqlacodegen[pgvector,sqlmodel]>=4.0.4",
+]
 
 [build-system]
 requires = ["hatchling"]

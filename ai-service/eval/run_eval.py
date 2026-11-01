@@ -10,19 +10,15 @@ import time
 from collections import Counter
 from pathlib import Path
 
-from ai_service.config import get_settings, load_providers
-from ai_service.embedder import Embedder
-from ai_service.llm import ProviderChain
 from ai_service.pipeline import classify
 from ai_service.schemas import Goal, PageData
+from ai_service.services import build_services
 
 DATASET = Path(__file__).parent / "dataset.jsonl"
 
 
 def main() -> int:
-    settings = get_settings()
-    embedder = Embedder(settings.embedding_model)
-    llm = ProviderChain(load_providers(settings.providers_file), settings.llm_timeout_s)
+    services = build_services()  # needs Postgres running (repo-root docker-compose.yml)
 
     rows = [json.loads(line) for line in DATASET.read_text(encoding="utf-8").splitlines() if line.strip()]
     correct = 0
@@ -33,7 +29,7 @@ def main() -> int:
         page = PageData(**row["page"])
         goal = Goal(text=row["goal"], profile=row.get("profile", ""))
         start = time.perf_counter()
-        verdict = classify(page, goal, llm, embedder, settings)
+        verdict = classify(page, goal, services)
         latencies.append(time.perf_counter() - start)
 
         ok = verdict.decision == row["expected"]

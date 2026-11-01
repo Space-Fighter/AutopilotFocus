@@ -22,11 +22,32 @@ Run every file in order. They use `IF NOT EXISTS`, so running them again is safe
 for f in db/migrations/*.sql; do docker compose exec -T db psql -U autopilot -d autopilot -v ON_ERROR_STOP=1 -f - < "$f"; done
 ```
 
+## Regenerate the code (after every migration)
+
+Nobody hand-writes table classes: both languages generate them from the schema.
+
+```bash
+# Python (sqlacodegen, reads the live database) -> ai-service/src/ai_service/db_models.py
+cd ai-service && uv run python scripts/gen_models.py
+
+# Go (sqlc, reads db/migrations + api/internal/db/queries) -> api/internal/db/*.go
+cd api && MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W)/..:/src" -w /src/api sqlc/sqlc:1.30.0 generate
+```
+
+(`pwd -W` and `MSYS_NO_PATHCONV` are for Git Bash on Windows; on macOS/Linux use `"$PWD/..:/src"`.)
+
+## Changing a table
+
+1. Add the next migration file (`003_…sql`). Never edit one that has already run.
+2. Apply it (above).
+3. Regenerate the code (above). Python: add the table to `TABLES` in `gen_models.py` if it needs it.
+   Go: add queries in `api/internal/db/queries/*.sql` for anything new.
+4. Fix whatever no longer compiles or type-checks: that's the drift, caught for you.
+
 ## Rules
 
-- Never edit a migration that has already run anywhere; add the next number (`003_…`).
-- Changing a table means updating three places: the new migration, the Python mapping, the Go struct.
 - Plain Postgres + pgvector only, so the same files run on Neon or AWS RDS later.
+- Generated files (`db_models.py`, `api/internal/db/*.go`) are never edited by hand.
 
 | File | Creates |
 |---|---|

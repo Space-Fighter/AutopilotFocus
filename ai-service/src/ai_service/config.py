@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     unrelated_threshold: float = 0.55
     llm_timeout_s: float = 20.0
     providers_file: Path = SERVICE_ROOT / "providers.toml"
+    # Postgres (docker-compose.yml at the repo root). "+psycopg" picks the psycopg 3 driver.
+    database_url: str = "postgresql+psycopg://autopilot:devpass@localhost:5432/autopilot"
+    # Summary cache: reuse a stored summary when a page vector is at least this similar.
+    cache_similarity_threshold: float = 0.95
 
 
 class ProviderConfig(BaseModel):

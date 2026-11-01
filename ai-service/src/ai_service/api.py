@@ -1,6 +1,7 @@
-"""HTTP wrapper the Go API calls (Step 1). Internal only: never exposed to the internet.
+"""HTTP wrapper the Go API calls. Internal only: never exposed to the internet.
 
 Run: uv run uvicorn ai_service.api:app --port 8001
+Needs Postgres running with the migrations applied (repo-root db/README.md).
 """
 
 from contextlib import asynccontextmanager
@@ -8,11 +9,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from .config import get_settings, load_providers
-from .embedder import Embedder
-from .llm import ProviderChain
 from .pipeline import classify
 from .schemas import Goal, PageData, Verdict
+from .services import build_services
 
 
 class ClassifyRequest(BaseModel):
@@ -22,12 +21,10 @@ class ClassifyRequest(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Load the embedding model and LLM clients once at startup, not per request.
-    settings = get_settings()
-    app.state.settings = settings
-    app.state.embedder = Embedder(settings.embedding_model)
-    app.state.llm = ProviderChain(load_providers(settings.providers_file), settings.llm_timeout_s)
+    # Build everything once at startup (embedding model, LLM clients, DB pool, FAISS index).
+    app.state.services = build_services()
     yield
+    app.state.services.engine.dispose()  # close the DB connections on shutdown
 
 
 app = FastAPI(title="AutopilotFocus AI service", lifespan=lifespan)
@@ -35,10 +32,9 @@ app = FastAPI(title="AutopilotFocus AI service", lifespan=lifespan)
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True}
+    return {"ok": True, "cached_pages": len(app.state.services.index)}
 
 
 @app.post("/v1/classify")
 def classify_endpoint(req: ClassifyRequest) -> Verdict:
-    s = app.state
-    return classify(req.page, req.goal, s.llm, s.embedder, s.settings)
+    return classify(req.page, req.goal, app.state.services)

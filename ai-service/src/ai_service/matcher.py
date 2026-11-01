@@ -1,7 +1,9 @@
-"""Cheap first pass: compares content facts with the user's goal using embeddings, no LLM call.
+"""Cheap first pass: compares the page summary with the user's goal using embeddings, no LLM call.
 
 Board frame 3: "Goal matcher (similarity thresholds)". Frame 5: "Embedding match vs goal".
 """
+
+import numpy as np
 
 from .config import Settings
 from .embedder import Embedder, cosine
@@ -23,10 +25,25 @@ def goal_text(goal: Goal) -> str:
     return goal.text
 
 
-def match(facts: ContentFacts, goal: Goal, embedder: Embedder, settings: Settings) -> MatchResult:
-    """Score facts against the goal and put the score in a band: related / unrelated / unclear."""
-    # Step 0 shortcut: the goal is re-embedded every call. Later, cache its vector per session.
-    similarity = cosine(embedder.embed(facts_text(facts)), embedder.embed(goal_text(goal)))
+class GoalVectors:
+    """Remembers each goal's vector, so a goal is embedded once, not on every page.
+
+    While blocking is On the goal never changes, so every page after the first is a cache hit.
+    """
+
+    def __init__(self, embedder: Embedder) -> None:
+        self._embedder = embedder
+        self._cache: dict[str, np.ndarray] = {}
+
+    # YOU TYPE #10
+    def get(self, goal: Goal) -> np.ndarray:
+        """Return the vector for goal_text(goal): from the cache, or embed it and remember it."""
+        raise NotImplementedError("YOU TYPE #10")
+
+
+def match(facts_vec: np.ndarray, goal_vec: np.ndarray, settings: Settings) -> MatchResult:
+    """Score the summary vector against the goal vector and put the score in a band."""
+    similarity = cosine(facts_vec, goal_vec)
 
     if similarity >= settings.related_threshold:
         band = "related"
