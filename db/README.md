@@ -14,15 +14,26 @@ docker compose up -d
 docker compose ps        # wait for (healthy)
 ```
 
-## Apply migrations
+## After adding or changing a migration: one command
 
-Run every file in order. They use `IF NOT EXISTS`, so running them again is safe.
+```bash
+./scripts/db-update.sh
+```
+
+It starts Postgres, applies every migration that hasn't run yet (tracked in the
+`schema_migrations` table, so each runs exactly once, inside a transaction), then regenerates
+the Python models and the Go code. Review the generated changes with `git diff` and commit
+them together with the migration.
+
+## The individual steps (what the script runs)
+
+### Apply migrations by hand
 
 ```bash
 for f in db/migrations/*.sql; do docker compose exec -T db psql -U autopilot -d autopilot -v ON_ERROR_STOP=1 -f - < "$f"; done
 ```
 
-## Regenerate the code (after every migration)
+### Regenerate the code
 
 Nobody hand-writes table classes: both languages generate them from the schema.
 
@@ -39,9 +50,9 @@ cd api && MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W)/..:/src" -w /src/api 
 ## Changing a table
 
 1. Add the next migration file (`003_…sql`). Never edit one that has already run.
-2. Apply it (above).
-3. Regenerate the code (above). Python: add the table to `TABLES` in `gen_models.py` if it needs it.
-   Go: add queries in `api/internal/db/queries/*.sql` for anything new.
+2. Python needs the table? Add it to `TABLES` in `ai-service/scripts/gen_models.py`.
+   Go needs new queries? Add them to `api/internal/db/queries/*.sql`.
+3. Run `./scripts/db-update.sh`.
 4. Fix whatever no longer compiles or type-checks: that's the drift, caught for you.
 
 ## Rules
