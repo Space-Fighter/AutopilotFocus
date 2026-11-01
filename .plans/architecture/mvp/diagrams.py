@@ -1,6 +1,6 @@
 """AutopilotFocus v1 MVP board (Excalidraw).
 
-The smallest product a student can use: Timed Focus, a typed goal, AI blocking, one appeal button.
+The smallest product a student can use: an On/Off switch, a typed goal, AI blocking, one appeal button.
 Everything else is parked (see ../diagrams.py for the full design).
 
 Regenerate:  python .plans/architecture/mvp/diagrams.py
@@ -19,12 +19,12 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "autopilot-focus-
 
 # ------------------------------------------------------------------------ 1
 with S.frame("overview", "MVP — system overview", 2000, 1000,
-             "Three parts, one job: block pages that don't fit the goal during a timed session. Dashed = later in v1."):
+             "Three parts, one job: while blocking is On, block pages that don't fit the goal. Dashed = later in v1."):
     S.box("student", 40, 450, 140, 80, "Student", "gray", shape="ellipse")
 
     S.zone("ext", 230, 190, 420, 640, "Chrome extension (WXT · React · TS)", "blue")
-    S.box("popup", 270, 240, 340, 110, "Popup\nstart timed session\n+ type goal", size=16)
-    S.box("sw", 270, 450, 340, 100, "Service worker\nsession timer · API calls", size=16)
+    S.box("popup", 270, 240, 340, 110, "Popup\nOn / Off switch\nOn → type goal", size=16)
+    S.box("sw", 270, 450, 340, 100, "Service worker\nOn/Off state · API calls", size=16)
     S.box("cs", 270, 660, 340, 120, "Content script\nextract page · block overlay\n\"I wasn't distracted\"", size=16)
 
     S.zone("vps", 740, 190, 760, 640, "VPS · Docker Compose", "cyan")
@@ -48,22 +48,21 @@ with S.frame("overview", "MVP — system overview", 2000, 1000,
 
 # ------------------------------------------------------------------------ 2
 with S.frame("ext", "MVP — Chrome extension", 2100, 1180,
-             "Only what a timed session needs. The service worker can be stopped by Chrome, so session state lives in chrome.storage."):
+             "Only what the On/Off switch needs. The service worker can be stopped by Chrome, so On/Off and the goal live in chrome.storage (they survive restarts)."):
     S.zone("page", 40, 180, 640, 920, "Inside the page (content script)", "blue")
     S.box("url", 80, 240, 260, 90, "URL-change watcher\nincl. YouTube navigation", size=15)
     S.box("sens", 80, 420, 260, 100, "Sensitive-page filter\npw / card fields\nbank & checkout", "red", size=15)
     S.box("extract", 400, 420, 240, 100, "Page extractor\ntitle · meta · headings\n+ YouTube fields", size=15)
     S.box("overlay", 80, 660, 560, 130, "Block overlay\n\"Caught you slopping\"\nreason + goal · [I wasn't distracted]", "red", size=16)
-    S.box("allowed", 80, 920, 560, 100, "Allowed pages for this session\n(appeal = allow this exact page)", "green", size=15)
+    S.box("allowed", 80, 920, 560, 100, "Allowed pages until turned Off\n(appeal = allow this exact page)", "green", size=15)
 
     S.zone("bg", 780, 180, 620, 920, "Service worker", "blue")
-    S.box("sm", 820, 240, 540, 100, "Session: idle → focus → ended\ngoal · end time", size=16)
-    S.box("alarm", 820, 430, 250, 90, "chrome.alarms\nends the session", size=15)
-    S.cylinder("store", 1110, 410, 250, 140, "chrome.storage\nsession · allowed", )
-    S.box("client", 820, 660, 540, 110, "API client\nonly while a session is running\nonly for the active tab", "cyan", size=15)
+    S.box("sm", 820, 240, 540, 100, "Blocking: Off / On\ngoal (set when turned On)", size=16)
+    S.cylinder("store", 960, 410, 250, 140, "chrome.storage\non/off · goal · allowed")
+    S.box("client", 820, 660, 540, 110, "API client\nonly while blocking is On\nonly for the active tab", "cyan", size=15)
 
     S.zone("ui", 1500, 180, 560, 920, "Popup (React)", "blue")
-    S.box("pop", 1540, 240, 480, 160, "Start session\nduration · \"What are you\nworking on?\" · timer · stop", size=16)
+    S.box("pop", 1540, 240, 480, 160, "On / Off switch\nturning On asks \"What are\nyou working on?\" · edit goal", size=16)
     S.box("api", 1540, 660, 480, 110, "Go API (VPS)", "cyan", size=16)
 
     S.arrow("url", "sens", "navigation")
@@ -71,15 +70,14 @@ with S.frame("ext", "MVP — Chrome extension", 2100, 1180,
     S.arrow("extract", "client", "page data (safe pages only)", via=[(720, 470), (720, 600), (1090, 600)])
     S.arrow("client", "overlay", "block + reason", color="red")
     S.arrow("overlay", "allowed", "appeal")
-    S.arrow("pop", "sm", "start / stop")
-    S.arrow("sm", "alarm", "")
+    S.arrow("pop", "sm", "on / off")
     S.arrow("sm", "store", "", both=True)
     S.arrow("client", "api", "HTTPS")
 
 
 # ------------------------------------------------------------------------ 3
 with S.frame("seq", "MVP — one page, start to finish", 2300, 1140,
-             "What happens when the student opens a page during a session. The page shows at once; the overlay appears if it's blocked."):
+             "What happens when the student opens a page while blocking is On. The page shows at once; the overlay appears if it's blocked."):
     xs = {}
     for key, x, label, color in [("cs", 120, "Content script", "blue"), ("sw", 520, "Service worker", "blue"),
                                  ("go", 920, "Go API", "cyan"), ("py", 1320, "Python AI", "yellow"),
@@ -133,7 +131,7 @@ with S.frame("plan", "MVP — build order", 2200, 760,
         ("s1", "1. Python service\n✓ done", "green"),
         ("s2", "2. Go API\nPOST /v1/verdict\n→ Python", "cyan"),
         ("s3", "3. Extension\nextract → API →\noverlay", "blue"),
-        ("s4", "4. Timed session\npopup + goal +\ntimer", "blue"),
+        ("s4", "4. On/Off switch\npopup + goal", "blue"),
         ("s5", "5. Appeal button\n+ sensitive filter", "blue"),
         ("s6", "6. Sign-in +\nPostgres\n+ deploy to VPS", "cyan"),
     ]
@@ -152,9 +150,9 @@ with S.frame("plan", "MVP — build order", 2200, 760,
 
 # ------------------------------------------------------------------------ 6
 with S.frame("goal", "MVP — goal handling", 2200, 900,
-             "One goal per session, typed by the student. No goal list, no goal checks yet."):
-    S.box("pop", 60, 220, 360, 120, "Popup: start session\nduration + \"What are you\nworking on?\" (required)", "pink", size=16)
-    S.box("store", 540, 220, 360, 120, "Session goal\nchrome.storage\n(this session only)", "violet", size=16)
+             "One goal while blocking is On, typed by the student. No goal list, no goal checks yet."):
+    S.box("pop", 60, 220, 360, 120, "Popup: turn blocking On\n→ \"What are you\nworking on?\" (required)", "pink", size=16)
+    S.box("store", 540, 220, 360, 120, "Current goal\nchrome.storage\n(until turned Off)", "violet", size=16)
     S.box("req", 1020, 220, 360, 120, "Sent with every\nverdict request\n{page, goal}", "cyan", size=16)
     S.box("py", 1500, 220, 360, 120, "Python: embedding match\n+ LLM judge use this goal", "yellow", size=16)
     S.box("edit", 540, 500, 360, 110, "Edit goal in the popup\nany time → next pages\nuse the new goal", "pink", size=16)
